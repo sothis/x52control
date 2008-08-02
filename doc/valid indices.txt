@@ -1,0 +1,38 @@
+0x00 - 0xDC
+0xE2, 0xFD
+
+index		value		description
+
+0x40-0xB1	0-127		brightness of display background
+0xB2		0-127		brightness of all LED's
+
+0xB3-B7		0x50		i/cooliehat blink off
+			0x51		i/cooliehat blink on (highorderbyte frequency?)
+
+0xB8		[1-20]|0^1	led on/off
+
+0xB9-0xBF				???
+
+0xC0					set time
+0xC1					set offset 1
+0xC2					set offset 2
+0xC3-C7					set date
+0xC8					set year
+
+0xD0-0xDC				text functions
+
+0xDD-0xE1				invalid
+
+0xE2
+#
+# strange behaviour with 0x5D, 0xF1, 0xF2, 0xF4, 0xF8
+# no idea if this switches into another internal mode
+# or if it's just a firmware bug
+
+
+0xE3-0xFC				invalid
+
+0xFD		0x50		shift off
+			0x51		shift on
+
+0xFE-0xFF				invalid

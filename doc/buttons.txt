@@ -1,0 +1,63 @@
+name                        number
+
+main module
+
+fire                        0
+extended fire               14
+pinky switch (shift)        5
+A                           2
+B                           3
+C                           4
+missile fire                1
+mode 1 (red)                27 (stays in state '1' (pressed) after transition)
+mode 2 (magenta)            28 (stays in state '1' (pressed) after transition)
+mode 3 (blue)               29 (stays in state '1' (pressed) after transition)
+cooliehat 1 up              19
+cooliehat 1 right           20
+cooliehat 1 down            21
+cooliehat 1 left            22
+cooliehat 2 (with led)      is axis
+T1                          8
+T2                          9
+T3                          10
+T4                          11
+T5                          12
+T6                          13
+
+throttle module
+
+D                           6
+E                           7
+i                           30
+mousebutton                 15
+backwheel up                16 (stays in state '0' (released) after transition)
+backwheel pressed           18
+backwheel down              17 (stays in state '0' (released) after transition)
+back cooliehat up           25
+back cooliehat right        24
+back cooliehat down         23
+back cooliehat left         26
+
+mfd
+
+start/stop                  32
+reset                       33
+function (left) pressed     31
+function (left) up          34
+function (left) down        35
+select (right) pressed      38
+select (right) up           36
+select (right) down         37
+
+
+
+AXES
+
+stick           3
+maincooliehat   2
+throttle        1
+mouse           2
+throttlesmall   1
+around E        1
+around i        1
+

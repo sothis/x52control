@@ -1,0 +1,50 @@
+TARGET   = win.xpl
+WD       = $(PWD)
+OUTDIR   = $(PWD)/build
+SDKDIR   = $(PWD)/sdk
+INTDIR   = $(OUTDIR)/obj
+
+CC       = /home/build/.wine/drive_c/msvc/90/bin/cl
+CPP      = /home/build/.wine/drive_c/msvc/90/bin/cl
+LD       = /home/build/.wine/drive_c/msvc/90/bin/link
+AR       = /home/build/.wine/drive_c/msvc/90/bin/lib
+SET_ENV  = /home/build/.wine/drive_c/msvc/90/bin/setenv
+
+CPPFLAGS = -O2 -I. -MT -nologo -GA -GR -EHsc -DWIN32 -DUNICODE -DIBM -I. -I$(SDKDIR)
+CFLAGS   = -O2 -I. -MT -nologo -GA -GR -EHsc -DWIN32 -DUNICODE -DIBM -I. -I$(SDKDIR)
+LDFLAGS  = -release -nologo -SUBSYSTEM:CONSOLE
+ARFLAGS  = -SUBSYSTEM:CONSOLE -nologo
+
+###########################################################
+
+print_error = (echo -e "\033[0;31m[ FAILED ]\033[0m" && false)
+clearscreen = echo -e "\033[2J\033[H"
+
+###########################################################
+
+CSRC	= $(wildcard src/*.c)
+CPPSRC	= $(wildcard src/*.cpp)
+COBJ	= $(patsubst %.c, $(INTDIR)/%.obj, $(CSRC))
+CPPOBJ	= $(patsubst %.cpp, $(INTDIR)/%.objpp, $(CPPSRC))
+
+all:		init make_dirs $(OUTDIR)/$(TARGET)
+	echo -e "\033[0;36m[ finished    ]\033[0m"
+
+init:
+	$(SET_ENV)
+	echo -e "\033[0;36mstarting build\033[0m"
+
+make_dirs:
+	-mkdir -p $(OUTDIR)
+	-mkdir -p $(INTDIR)/src
+
+$(INTDIR)/src/%.obj: $(PWD)/src/%.c
+	echo -e "\033[0;32m[ compiling   ]\033[0m: " $@
+	$(CC) $(CFLAGS) -c -Fo$@ -Tc $< || $(print_error)
+
+$(INTDIR)/src/%.objpp: $(PWD)/src/%.cpp
+	echo -e "\033[0;32m[ compiling   ]\033[0m: " $@
+	$(CPP) $(CPPFLAGS) -c -Fo$@ -Tp $< || $(print_error)
+
+$(OUTDIR)/$(TARGET):	$(COBJ) $(CPPOBJ)
+	echo -e "\033[0;34m[ linking     ]\033[0m: " $@

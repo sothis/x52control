@@ -1,0 +1,64 @@
+TARGET   = lin.xpl
+WD       = $(PWD)
+OUTDIR   = $(PWD)/build
+SDKDIR   = $(PWD)/sdk
+INTDIR   = $(OUTDIR)/obj
+
+CC       = gcc
+CPP      = g++
+LD       = gcc
+AR       = ar
+
+CFLAGS   = -O3 -fexpensive-optimizations -Wall -I. -I$(SDKDIR) -fPIC -DLIN
+CPPFLAGS = -O3 -fexpensive-optimizations -Wall -I. -I$(SDKDIR) -fPIC -DLIN
+#LDFLAGS  = -nostdlib -Wl,--unresolved-symbols=report-all,-shared,-export-dynamic,-soname,$(TARGET)
+LDFLAGS  = -nostdlib -Wl,-shared,-export-dynamic,-soname,$(TARGET),-s
+ARFLAGS  = rcs
+
+###########################################################
+
+print_error = (echo -e "\033[0;31m[ FAILED ]\033[0m" && false)
+clearscreen = echo -e "\033[2J\033[H"
+
+###########################################################
+
+CSRC	= $(wildcard src/*.c)
+CPPSRC	= $(wildcard src/*.cpp)
+COBJ	= $(patsubst %.c, $(INTDIR)/%.o, $(CSRC))
+CPPOBJ	= $(patsubst %.cpp, $(INTDIR)/%.opp, $(CPPSRC))
+
+all:		init make_dirs $(OUTDIR)/$(TARGET)
+	echo -e "\033[0;36m[ finished    ]\033[0m"
+
+init:
+	echo -e "\033[0;36mstarting build\033[0m"
+
+make_dirs:
+	-mkdir -p $(OUTDIR)
+	-mkdir -p $(INTDIR)/src
+
+$(INTDIR)/src/%.o: $(PWD)/src/%.c
+	echo -e "\033[0;32m[ compiling   ]\033[0m: " $@
+	$(CC) $(CFLAGS) -c -o $@ $< || $(print_error)
+
+$(INTDIR)/src/%.opp: $(PWD)/src/%.cpp
+	echo -e "\033[0;32m[ compiling   ]\033[0m: " $@
+	$(CPP) $(CPPFLAGS) -c -o $@ $< || $(print_error)
+
+# TODO: determine libgcc dir (maybe via 'gcc -v'?)
+$(INTDIR)/cstd.a:
+	echo -e "\033[0;37m[ archiving   ]\033[0m: " $@
+	-mkdir -p $(INTDIR)/tmp
+	cd $(INTDIR)/tmp && \
+	$(AR) x /usr/lib/libc.a && \
+	$(AR) x /usr/lib/libc_nonshared.a && \
+	$(AR) x /usr/lib/gcc/i386-redhat-linux/4.3.0/libgcc.a && \
+	$(AR) x /usr/lib/gcc/i386-redhat-linux/4.3.0/libgcc_eh.a && \
+	cd $(INTDIR) && \
+	$(AR) $(ARFLAGS) cstd.a $(INTDIR)/tmp/* && \
+	rm -rdf tmp && \
+	cd $(WD)
+
+$(OUTDIR)/$(TARGET):	$(COBJ) $(CPPOBJ) $(INTDIR)/cstd.a
+	echo -e "\033[0;34m[ linking     ]\033[0m: " $@
+	$(LD) $(LDFLAGS) -o $(OUTDIR)/$(TARGET) $(COBJ) $(CPPOBJ) libusb32/libusb.a /usr/lib/gcc/i386-redhat-linux/4.3.0/libstdc++.a /usr/lib/libpthread.a /lib/ld-linux.so.2 $(INTDIR)/cstd.a || $(print_error)
