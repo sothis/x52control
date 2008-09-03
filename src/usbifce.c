@@ -1,22 +1,11 @@
 #include <stdio.h>
 #include <string.h>
-#ifdef LIN
 #include <usb.h>
-#endif
-#ifdef IBM
-#include "DirectOutputHelper.h"
-CDirectOutput output;
-#endif
 #include "usbifce.h"
 
 struct x52
 {
-#if LIN
     usb_dev_handle *hdl;
-#endif
-#if IBM
-	void* hdl;
-#endif
     enum x52_type type;
 unsigned feat_mfd:
     1;
@@ -66,7 +55,6 @@ int clear_idx[3] =
 
 int x52_cleartext(struct x52 *x52, int line)
 {
-#ifdef LIN
     int r;
     if (!x52->feat_mfd)
     {
@@ -83,7 +71,6 @@ int x52_cleartext(struct x52 *x52, int line)
                   usb_strerror());
         return -2;
     }
-#endif
     return 0;
 }
 
@@ -97,7 +84,6 @@ int x52_clearall(struct x52 *x52)
 
 int x52_settext(struct x52 *x52, int line, char *text, int length)
 {
-#ifdef LIN
     int r;
     if (!x52->feat_mfd)
     {
@@ -123,16 +109,11 @@ int x52_settext(struct x52 *x52, int line, char *text, int length)
         length -= 2;
         text += 2;
     }
-#endif
-#if IBM
-
-#endif
     return 0;
 }
 
 int x52_setbri(struct x52 *x52, int mfd, int brightness)
 {
-#ifdef LIN
     int r;
     if (!x52->feat_mfd)
     {
@@ -148,13 +129,12 @@ int x52_setbri(struct x52 *x52, int mfd, int brightness)
         x52printf(stderr, "x52_setbri failed (%s)\n", usb_strerror());
         return -2;
     }
-#endif
+
     return 0;
 }
 
 int x52_setled(struct x52 *x52, int led, int on)
 {
-#ifdef LIN
     int r;
     if (!x52->feat_led)
     {
@@ -171,13 +151,12 @@ int x52_setled(struct x52 *x52, int led, int on)
         x52printf(stderr, "x52_setled failed (%s)\n", usb_strerror());
         return -2;
     }
-#endif
+
     return 0;
 }
 
 int x52_settime(struct x52 *x52, int h24, int hour, int minute)
 {
-#ifdef LIN
     int r;
     r = usb_control_msg(x52->hdl,
                         USB_TYPE_VENDOR|USB_RECIP_DEVICE|USB_ENDPOINT_OUT,
@@ -188,13 +167,12 @@ int x52_settime(struct x52 *x52, int h24, int hour, int minute)
         x52printf(stderr, "x52_settime failed (%s)\n", usb_strerror());
         return -2;
     }
-#endif
     return 0;
 }
 
 int x52_setoffs(struct x52 *x52, int idx, int h24, int inv, int offset)
 {
-#ifdef LIN
+
     int r;
     r = usb_control_msg(x52->hdl,
                         USB_TYPE_VENDOR|USB_RECIP_DEVICE|USB_ENDPOINT_OUT, X52PRO_REQUEST,
@@ -205,13 +183,12 @@ int x52_setoffs(struct x52 *x52, int idx, int h24, int inv, int offset)
         x52printf(stderr, "x52_settime failed (%s)\n", usb_strerror());
         return -2;
     }
-#endif
+
     return 0;
 }
 
 int x52_setsecond(struct x52 *x52, int second)
 {
-#ifdef LIN
     int r;
     if (!x52->feat_sec)
     {
@@ -227,13 +204,12 @@ int x52_setsecond(struct x52 *x52, int second)
         x52printf(stderr, "x52_setsecond failed (%s)\n", usb_strerror());
         return -2;
     }
-#endif
+
     return 0;
 }
 
 int x52_setdate(struct x52 *x52, int year, int month, int day)
 {
-#ifdef LIN
     int r;
     if (!x52->feat_mfd)
     {
@@ -258,13 +234,12 @@ int x52_setdate(struct x52 *x52, int year, int month, int day)
         x52printf(stderr, "x52_setdate failed for year (%s)\n", usb_strerror());
         return -2;
     }
-#endif
     return 0;
 }
 
 int x52_custom(struct x52 *x52, int index, int value)
 {
-#ifdef LIN
+
     int r = usb_control_msg(x52->hdl,
                             USB_TYPE_VENDOR|USB_RECIP_DEVICE|USB_ENDPOINT_OUT,
                             X52PRO_REQUEST, value, index, NULL, 0, 1000);
@@ -274,7 +249,7 @@ int x52_custom(struct x52 *x52, int index, int value)
                   usb_strerror());
         return -2;
     }
-#endif
+
     return 0;
 }
 
@@ -284,20 +259,8 @@ int x52_custom(struct x52 *x52, int index, int value)
 #define PRODUCT_X52PRO 0x762
 #define PRODUCT_YOKE 0xbac
 
-#if IBM
-struct x52 x52, *x52p;
-void __stdcall devicechange(void* device, bool added, void* ctxt)
-{
-	if (x52.hdl == 0 && added)
-		x52.hdl = device;
-	else if (!added && x52.hdl == device)
-		x52.hdl  = 0;
-}
-#endif
-
 struct x52* x52_init(void)
 {
-#ifdef LIN
     struct x52 x52, *x52p;
 
     usb_init();
@@ -353,19 +316,6 @@ struct x52* x52_init(void)
     x52p = malloc(sizeof(*x52p));
     *x52p = x52;
     return x52p;
-#endif
-#if IBM
-	HRESULT hr = output.Initialize(L"x52plugin");
-	if (SUCCEEDED(hr))
-	{
-		hr = output.RegisterDeviceChangeCallback((Pfn_DirectOutput_Device_Callback)devicechange, 0);
-		hr = output.Enumerate();
-		hr = output.AddPage(x52.hdl, 0, L"HelloWorld Page", TRUE);
-		output.SetString(x52.hdl, 0, 0, 11, L"Hello World");
-		return (struct x52*)1;
-	}
-	return 0;
-#endif
 }
 
 enum x52_type x52_gettype(struct x52* hdl)
@@ -375,11 +325,9 @@ enum x52_type x52_gettype(struct x52* hdl)
 
 void x52_close(struct x52* x52)
 {
-#ifdef LIN
     int r;
     r = usb_close(x52->hdl);
     free(x52);
-#endif
 }
 
 void x52_debug(struct x52* x52, int debug)

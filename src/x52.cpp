@@ -1,10 +1,9 @@
 #include <stdlib.h>
 #include <time.h>
 #include <fcntl.h>
-#if LIN
 #include <unistd.h>
 #include <sys/time.h>
-#endif
+
 #if IBM
 #include <io.h>
 #define TEMP_FAILURE_RETRY(x) x
@@ -22,9 +21,7 @@ X52::X52(void) : _isRunning(0), _x52_interval(250), _pause(0), currentref(NULL),
 {
     _x52device = x52_init();
     if (!_x52device) return;
-#if LIN
     _mfd_mutex = NULL;
-#endif
     initX52();
     _24hoursLocalTime = true;
     _24hoursZone1 = true;
@@ -62,56 +59,42 @@ bool X52::isConnected(void) const
 
 void X52::set_currentpage(int page)
 {
-	#if LIN
     if (_mfd_mutex) pthread_mutex_lock(_mfd_mutex);
-	#endif
     mp_iter = mfd_pages.find(page);
     if (mp_iter == mfd_pages.end())
     {
-		#if LIN
         if (_mfd_mutex) pthread_mutex_unlock(_mfd_mutex);
-		#endif
         return;
     }
     currentpage = mp_iter->first;
     current_pagename = mp_iter->second;
-	#if LIN
     if (_mfd_mutex) pthread_mutex_unlock(_mfd_mutex);
-	#endif
     return;
 }
 
 void X52::datacycle_up(void)
 {
-	#if LIN
     if (_mfd_mutex) pthread_mutex_lock(_mfd_mutex);
-	#endif
     mp_iter = mfd_pages.find(currentpage);
     mp_iter++;
     if (mp_iter == mfd_pages.end()) mp_iter = mfd_pages.begin();
     currentpage = mp_iter->first;
     current_pagename = mp_iter->second;
     datachanged = true;
-	#if LIN
     if (_mfd_mutex) pthread_mutex_unlock(_mfd_mutex);
-	#endif
     return;
 }
 
 void X52::datacycle_down(void)
 {
-	#if LIN
     if (_mfd_mutex) pthread_mutex_lock(_mfd_mutex);
-	#endif
     mp_iter = mfd_pages.find(currentpage);
     if (mp_iter == mfd_pages.begin()) mp_iter = mfd_pages.end();
     mp_iter--;
     currentpage = mp_iter->first;
     current_pagename = mp_iter->second;
     datachanged = true;
-	#if LIN
     if (_mfd_mutex) pthread_mutex_unlock(_mfd_mutex);
-	#endif
     return;
 }
 
@@ -132,26 +115,18 @@ void X52::add_datasource(std::string& source)
         printf("data type not applicable\n");
         return;
     }
-	#if LIN
     if (_mfd_mutex) pthread_mutex_lock(_mfd_mutex);
-	#endif
     datasources[source] = std::make_pair(temp, reftype);
-	#if LIN
     if (_mfd_mutex) pthread_mutex_unlock(_mfd_mutex);
-	#endif
-    //  printf("added data source: %s\n", source.c_str());
+    printf("added data source: %s\n", source.c_str());
     return;
 }
 
 void X52::add_mfdpage(int type, std::string& name)
 {
-	#if LIN
     if (_mfd_mutex) pthread_mutex_lock(_mfd_mutex);
-	#endif
     mfd_pages[type] = name;
-	#if LIN
     if (_mfd_mutex) pthread_mutex_unlock(_mfd_mutex);
-	#endif
 }
 
 void X52::displaydata(int& ticks)
@@ -170,9 +145,7 @@ void X52::displaydata(int& ticks)
         struct tm tr;
 
         t = time(NULL);
-#if LIN
         localtime_r(&t, &tr);
-#endif
         if (useXPlaneTime)
         {
             current_local_time = XPLMGetDataf(time_local_ref);
@@ -192,9 +165,7 @@ void X52::displaydata(int& ticks)
         }
         setDate(tr.tm_mday,tr.tm_mon+1,1900+tr.tm_year);
     }
-	#if LIN
     if (_mfd_mutex) pthread_mutex_lock(_mfd_mutex);
-	#endif
     for (ds_iter = datasources.begin(); ds_iter != datasources.end(); ++ds_iter)
     {
         currentref =  (ds_iter->second).first;
@@ -289,9 +260,7 @@ void X52::displaydata(int& ticks)
             setLedBrightness((unsigned char)(instr_bri * 0x7f));
         }
     }
-	#if LIN
     if (_mfd_mutex) pthread_mutex_unlock(_mfd_mutex);
-	#endif
     if (datachanged)
     {
         switch (currentpage)
@@ -335,13 +304,9 @@ void X52::displaydata(int& ticks)
         default:
             break;
         }
-		#if LIN
         if (_mfd_mutex) pthread_mutex_lock(_mfd_mutex);
-		#endif
         datachanged = false;
-		#if LIN
         if (_mfd_mutex) pthread_mutex_unlock(_mfd_mutex);
-		#endif
     }
     return;
 }
@@ -351,7 +316,7 @@ void X52::start(unsigned short ms)
     unsigned short oi = _x52_interval;
 
     if (!isConnected() || _isRunning) return;
-#if LIN
+
     _mfd_mutex = new pthread_mutex_t;
     if (!_mfd_mutex) return;
 
@@ -382,16 +347,16 @@ void X52::start(unsigned short ms)
         delete _mfd_mutex;
 
     }
-#endif
+
     return;
 }
 
 void X52::stop(bool join)
 {
     if (!isConnected() || !_isRunning) return;
-#if LIN
+
     _isRunning = 0;
-    TEMP_FAILURE_RETRY(close(_devfd));
+    close(_devfd);
     if (join)
     {
         // we won't join the input thread, since read
@@ -406,7 +371,7 @@ void X52::stop(bool join)
     pthread_detach(_ptX52);
     pthread_mutex_destroy(_mfd_mutex);
     delete _mfd_mutex;
-#endif
+
     return;
 }
 
@@ -418,7 +383,7 @@ void X52::pause(bool pause)
     }
     else
     {
-        TEMP_FAILURE_RETRY(close(_devfd));
+        close(_devfd);
         _devfd = -1;
     }
     _pause = pause;
@@ -427,17 +392,17 @@ void X52::pause(bool pause)
 
 void* X52::x52_thread(void* arg)
 {
-#if LIN
+
     X52* tmp = reinterpret_cast<X52*>(arg);
     if (tmp) tmp->x52_update();
     pthread_exit(NULL);
-#endif
+
 	return NULL;
 }
 
 void X52::x52_update(void)
 {
-#if LIN
+
     int ticks = 0;
     printf("X52 Data thread started\n");
     while (_isRunning)
@@ -453,17 +418,15 @@ void X52::x52_update(void)
             usleep(50000);
         }
     }
-#endif
+
     return;
 }
 
 void* X52::input_thread(void* arg)
 {
-#if LIN
     X52* tmp = reinterpret_cast<X52*>(arg);
     if (tmp) tmp->process_input();
     pthread_exit(NULL);
-#endif
 	return NULL;
 }
 
@@ -478,7 +441,7 @@ void X52::process_input(void)
     {
         if (_devfd != -1)
         {
-            res = TEMP_FAILURE_RETRY(read(_devfd, &jse, sizeof(struct js_event)));
+            res = read(_devfd, &jse, sizeof(struct js_event));
             if (res == -1) perror("error reading joystick event:");
             else if (!(jse.type == 0x80 || jse.type == 0x81 || jse.type == 0x82 || _pause))
             {

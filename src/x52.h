@@ -134,8 +134,9 @@ private:
 
     static void* input_thread(void* arg);
     void process_input(void);
+#if LIN
     void dispatch_input(struct js_event& e);
-
+#endif
     void datacycle_up(void);
     void datacycle_down(void);
 
@@ -159,11 +160,11 @@ private:
     unsigned int _isRunning;
     unsigned short _x52_interval;
     bool _pause;
-#ifdef LIN
+
     pthread_t _ptX52;
     pthread_t _ptInput;
     pthread_mutex_t* _mfd_mutex;
-#endif
+
     std::map<std::string, std::pair<XPLMDataRef, int> > datasources;
     std::map<std::string, std::pair<XPLMDataRef, int> >::iterator ds_iter;
     std::map<int, std::string> mfd_pages;
