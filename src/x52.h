@@ -5,6 +5,23 @@
 #include <linux/joystick.h>
 #include <pthread.h>
 #endif
+
+#ifdef APL
+#include <stdio.h>
+#include <ctype.h>
+#include <sys/errno.h>
+#include <sysexits.h>
+#include <mach/mach.h>
+#include <mach/mach_error.h>
+#include <IOKit/IOKitLib.h>
+#include <IOKit/IOCFPlugIn.h>
+#include <IOKit/hid/IOHIDLib.h>
+#include <IOKit/hid/IOHIDUsageTables.h>
+#include <IOKit/usb/USB.h>
+#include <CoreFoundation/CoreFoundation.h>
+#include <Carbon/Carbon.h>
+#endif
+
 #include <string>
 #include <map>
 
@@ -113,7 +130,43 @@
 #define RADIO_ADF2_STDBY        "sim/cockpit/radios/adf2_stdby_freq_hz"
 
 #define INSTRUMENT_BRIGHTNESS   "sim/cockpit/electrical/instrument_brightness"
+
 class X52;
+
+#if APL
+/*
+
+*/
+typedef struct _sx52device
+{
+	IOHIDDeviceInterface ** interface;
+    
+	char product[256];
+	long usage;
+	long usagePage;
+    
+	long axes;
+	long buttons;
+	long hats;
+	long elements;    
+    
+	int removed;
+	int uncentered;
+} x52device;
+//typedef struct _sx52device x52device;
+
+typedef struct _element
+{
+	IOHIDElementCookie cookie;
+} element;
+//typedef struct _element element;
+
+typedef struct _elemhandlerarg
+{
+    X52* sender;
+    x52device* pDevice;
+} elemhandlerarg;
+#endif
 
 class X52
 {
@@ -131,13 +184,36 @@ private:
     static void* x52_thread(void* arg);
     void x52_update(void);
     void displaydata(int& ticks);
-
+    enum X52PRODUCTS
+    {
+        OTHER,
+        X52STD,
+        X52PRO,
+        YOKE
+    };
+    
     static void* input_thread(void* arg);
     void process_input(void);
 #if LIN
     void dispatch_input(struct js_event& e);
 #endif
-    void datacycle_up(void);
+
+#if APL
+    void dispatch_input(int number, int value);
+    void HIDGetElementInfo (CFTypeRef refElement, element* pElement);
+    void HIDAddElement (CFTypeRef refElement, x52device* pDevice);
+    static void HIDGetElementsCFArrayHandler (const void* value, void* parameter);
+    void HIDGetElements (CFTypeRef refElementCurrent, x52device* pDevice);
+    void HIDGetCollectionElements (CFMutableDictionaryRef deviceProperties, x52device* pDevice);
+    CFMutableDictionaryRef setup_dictionary(UInt32 usagePage, UInt32 usage);
+    io_iterator_t find_device(const mach_port_t masterPort, UInt32 usagePage, UInt32 usage);
+    int is_x52product(io_registry_entry_t hidDevice);
+    IOHIDDeviceInterface** create_deviceinterface(io_object_t hidDevice);
+    void event_interface(IOHIDDeviceInterface **hidDeviceInterface);
+    void process_device(io_object_t hidDevice);
+    int mac_jsstart();
+#endif
+     void datacycle_up(void);
     void datacycle_down(void);
 
     void set_currentpage(int page);
@@ -160,6 +236,15 @@ private:
     unsigned int _isRunning;
     unsigned short _x52_interval;
     bool _pause;
+
+#if APL
+    x52device curDevice;
+    element curElement;
+    IOHIDElementCookie buttonElements[256];
+    int buttonCookies[256];
+    elemhandlerarg ehArgs;
+#endif
+
 
     pthread_t _ptX52;
     pthread_t _ptInput;

@@ -9,8 +9,8 @@ CPP      = g++
 LD       = g++
 AR       = ar
 
-CFLAGS   = -I. -I$(SDKDIR) -I/opt/local/include -DAPL
-CPPFLAGS = -I. -I$(SDKDIR) -I/opt/local/include -DAPL
+CFLAGS   = -I. -I$(SDKDIR) -I/opt/local/include -DAPL=1
+CPPFLAGS = -I. -I$(SDKDIR) -I/opt/local/include -DAPL=1
 #LDFLAGS  = -nostdlib -Wl,--unresolved-symbols=report-all,-shared,-export-dynamic,-soname,$(TARGET)
 LDFLAGS  = -framework IOKit -framework CoreFoundation -framework Carbon -bundle -undefined dynamic_lookup
 ARFLAGS  = rcs
@@ -46,20 +46,6 @@ $(INTDIR)/src/%.o: $(PWD)/src/%.c
 $(INTDIR)/src/%.opp: $(PWD)/src/%.cpp
 	echo "\033[0;32m[ compiling   ]\033[0m: " $@
 	$(CPP) $(CPPFLAGS) -c -o $@ $< || $(print_error)
-
-# TODO: determine libgcc dir (maybe via 'gcc -v'?)
-$(INTDIR)/cstd.a:
-	echo "\033[0;37m[ archiving   ]\033[0m: " $@
-	-mkdir -p $(INTDIR)/tmp
-	cd $(INTDIR)/tmp && \
-	$(AR) x /usr/lib/libc.a && \
-	$(AR) x /usr/lib/libc_nonshared.a && \
-	$(AR) x /usr/lib/gcc/i386-redhat-linux/4.3.0/libgcc.a && \
-	$(AR) x /usr/lib/gcc/i386-redhat-linux/4.3.0/libgcc_eh.a && \
-	cd $(INTDIR) && \
-	$(AR) $(ARFLAGS) cstd.a $(INTDIR)/tmp/* && \
-	rm -rdf tmp && \
-	cd $(WD)
 
 $(OUTDIR)/$(TARGET):	$(COBJ) $(CPPOBJ)
 	echo "\033[0;34m[ linking     ]\033[0m: " $@
