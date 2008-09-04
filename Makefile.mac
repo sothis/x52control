@@ -12,7 +12,7 @@ AR       = ar
 CFLAGS   = -I. -I$(SDKDIR) -I/opt/local/include -DAPL
 CPPFLAGS = -I. -I$(SDKDIR) -I/opt/local/include -DAPL
 #LDFLAGS  = -nostdlib -Wl,--unresolved-symbols=report-all,-shared,-export-dynamic,-soname,$(TARGET)
-LDFLAGS  = -framework IOKit -framework CoreFoundation -bundle -undefined dynamic_lookup
+LDFLAGS  = -framework IOKit -framework CoreFoundation -framework Carbon -bundle -undefined dynamic_lookup
 ARFLAGS  = rcs
 
 ###########################################################
