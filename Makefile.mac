@@ -9,10 +9,10 @@ CPP      = g++
 LD       = g++
 AR       = ar
 
-CFLAGS   = -I. -I$(SDKDIR) -I/opt/local/include -DAPL=1
-CPPFLAGS = -I. -I$(SDKDIR) -I/opt/local/include -DAPL=1
+CFLAGS   = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc -I. -I./src -I$(SDKDIR) -DAPL=1
+CPPFLAGS = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc -I. -I./src -I$(SDKDIR) -DAPL=1
 #LDFLAGS  = -nostdlib -Wl,--unresolved-symbols=report-all,-shared,-export-dynamic,-soname,$(TARGET)
-LDFLAGS  = -framework IOKit -framework CoreFoundation -framework Carbon -bundle -undefined dynamic_lookup
+LDFLAGS  = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc -framework IOKit -framework CoreFoundation -framework Carbon -bundle -undefined dynamic_lookup
 ARFLAGS  = rcs
 
 ###########################################################
@@ -49,7 +49,7 @@ $(INTDIR)/src/%.opp: $(PWD)/src/%.cpp
 
 $(OUTDIR)/$(TARGET):	$(COBJ) $(CPPOBJ)
 	echo "\033[0;34m[ linking     ]\033[0m: " $@
-	$(LD) $(LDFLAGS) -o $(OUTDIR)/$(TARGET) $(COBJ) $(CPPOBJ) /opt/local/lib/libusb.a || $(print_error)
+	$(LD) $(LDFLAGS) -o $(OUTDIR)/$(TARGET) $(COBJ) $(CPPOBJ) || $(print_error)
 
 clean:
 	-rm -rdf build
