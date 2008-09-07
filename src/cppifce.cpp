@@ -1,6 +1,6 @@
 #include <string.h>
 #include <stdio.h>
-#include <XPLM/XPLMPlugin.h>
+#include "XPLM/XPLMPlugin.h"
 #include "cppifce.h"
 #include "x52.h"
 
@@ -18,7 +18,7 @@ int cpp_plugin_start(char* outDesc)
         delete x52pro;
         return 0;
     }
-    strcpy(outDesc, "Integrates the Saitek X52 Pro X-Plane");
+    strcpy(outDesc, "provides additional features for the Saitek X52 products");
     return 1;
 }
 

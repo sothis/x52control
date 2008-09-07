@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include <usb.h>
+#include "usb/usb.h"
 #include "usbifce.h"
 
 struct x52
@@ -51,7 +51,7 @@ int clear_idx[3] =
     X52PRO_CLEAR3,
 };
 
-#define x52printf if (x52->debug) fprintf
+#define x52printf fprintf
 
 int x52_cleartext(struct x52 *x52, int line)
 {

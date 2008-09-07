@@ -1,7 +1,7 @@
 #define XPML200
 
-#include <XPLM/XPLMDefs.h>
 #include <string.h>
+#include "XPLM/XPLMDefs.h"
 #include "cppifce.h"
 
 #if IBM

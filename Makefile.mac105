@@ -9,11 +9,8 @@ CPP      = g++
 LD       = g++
 AR       = ar
 
-CFLAGS   = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc -I. -I./src -I$(SDKDIR) -DAPL=1
-CPPFLAGS = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc -I. -I./src -I$(SDKDIR) -DAPL=1
-#LDFLAGS  = -nostdlib -Wl,--unresolved-symbols=report-all,-shared,-export-dynamic,-soname,$(TARGET)
-LDFLAGS  = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc -framework IOKit -framework CoreFoundation -framework Carbon -bundle -undefined dynamic_lookup
-ARFLAGS  = rcs
+CFLAGS   = -mmacosx-version-min=10.5 -arch x86_64 -arch ppc64 -arch i386 -arch ppc -I. -I./src -I$(SDKDIR) -DAPL=1
+LDFLAGS  = -mmacosx-version-min=10.5 -arch x86_64 -arch ppc64 -arch i386 -arch ppc -framework IOKit -framework CoreFoundation -framework Carbon -bundle -undefined dynamic_lookup
 
 ###########################################################
 
@@ -45,7 +42,7 @@ $(INTDIR)/src/%.o: $(PWD)/src/%.c
 
 $(INTDIR)/src/%.opp: $(PWD)/src/%.cpp
 	echo "\033[0;32m[ compiling   ]\033[0m: " $@
-	$(CPP) $(CPPFLAGS) -c -o $@ $< || $(print_error)
+	$(CPP) $(CFLAGS) -c -o $@ $< || $(print_error)
 
 $(OUTDIR)/$(TARGET):	$(COBJ) $(CPPOBJ)
 	echo "\033[0;34m[ linking     ]\033[0m: " $@

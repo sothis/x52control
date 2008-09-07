@@ -4,11 +4,6 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-#if IBM
-#include <io.h>
-#define TEMP_FAILURE_RETRY(x) x
-#define snprintf sprintf_s
-#endif
 #include <errno.h>
 #include <string.h>
 
@@ -111,19 +106,19 @@ void X52::add_datasource(std::string& source)
     temp = XPLMFindDataRef(source.c_str());
     if (!temp)
     {
-        printf("data source not found.\n");
+        fprintf(stderr, "data source not found.\n");
         return;
     }
     reftype = XPLMGetDataRefTypes(temp);
     if (!reftype)
     {
-        printf("data type not applicable\n");
+        fprintf(stderr, "data type not applicable\n");
         return;
     }
     if (_mfd_mutex) pthread_mutex_lock(_mfd_mutex);
     datasources[source] = std::make_pair(temp, reftype);
     if (_mfd_mutex) pthread_mutex_unlock(_mfd_mutex);
-   // printf("added data source: %s\n", source.c_str());
+    fprintf(stderr, "added data source: %s\n", source.c_str());
     return;
 }
 

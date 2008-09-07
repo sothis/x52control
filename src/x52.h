@@ -25,8 +25,7 @@
 #include <string>
 #include <map>
 
-#include <XPLM/XPLMDataAccess.h>
-
+#include "XPLM/XPLMDataAccess.h"
 #include "usbifce.h"
 
 // Buttons

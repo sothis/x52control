@@ -1,0 +1,52 @@
+TARGET   = mac.xpl
+WD       = $(PWD)
+OUTDIR   = $(PWD)/build_compat
+SDKDIR   = $(PWD)/sdk
+INTDIR   = $(OUTDIR)/obj
+
+CC       = gcc
+CPP      = g++
+LD       = g++
+AR       = ar
+
+CFLAGS   = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc -arch ppc7400 -arch ppc970 -I. -I./src -I$(SDKDIR) -DAPL=1
+LDFLAGS  = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc -arch ppc7400 -arch ppc970 -framework IOKit -framework CoreFoundation -framework Carbon -bundle -undefined dynamic_lookup
+
+###########################################################
+
+print_error = (echo "\033[0;31m[ FAILED ]\033[0m" && false)
+clearscreen = echo "\033[2J\033[H"
+
+###########################################################
+
+CSRC	= $(wildcard src/*.c)
+CPPSRC	= $(wildcard src/*.cpp)
+COBJ	= $(patsubst %.c, $(INTDIR)/%.o, $(CSRC))
+CPPOBJ	= $(patsubst %.cpp, $(INTDIR)/%.opp, $(CPPSRC))
+
+.SILENT:
+
+all:		init make_dirs $(OUTDIR)/$(TARGET)
+	echo "\033[0;36m[ finished    ]\033[0m"
+
+init:
+	echo "\033[0;36mstarting build\033[0m"
+
+make_dirs:
+	-mkdir -p $(OUTDIR)
+	-mkdir -p $(INTDIR)/src
+
+$(INTDIR)/src/%.o: $(PWD)/src/%.c
+	echo "\033[0;32m[ compiling   ]\033[0m: " $@
+	$(CC) $(CFLAGS) -c -o $@ $< || $(print_error)
+
+$(INTDIR)/src/%.opp: $(PWD)/src/%.cpp
+	echo "\033[0;32m[ compiling   ]\033[0m: " $@
+	$(CPP) $(CFLAGS) -c -o $@ $< || $(print_error)
+
+$(OUTDIR)/$(TARGET):	$(COBJ) $(CPPOBJ)
+	echo "\033[0;34m[ linking     ]\033[0m: " $@
+	$(LD) $(LDFLAGS) -o $(OUTDIR)/$(TARGET) $(COBJ) $(CPPOBJ) || $(print_error)
+
+clean:
+	-rm -rdf build
