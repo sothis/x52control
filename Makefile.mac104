@@ -1,52 +1,61 @@
 TARGET   = mac.xpl
-WD       = $(PWD)
-OUTDIR   = $(PWD)/build_compat
-SDKDIR   = $(PWD)/sdk
+OUTDIR   = build
 INTDIR   = $(OUTDIR)/obj
 
 CC       = gcc
 CPP      = g++
-LD       = g++
-AR       = ar
+LD       = gcc
 
-CFLAGS   = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc -arch ppc7400 -arch ppc970 -I. -I./src -I$(SDKDIR) -DAPL=1
+DEFS     = -DAPL -DPIC
+
+CFLAGS   = -O2 -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc -arch ppc7400 -arch ppc970
+CPPFLAGS = $(CFLAGS)
 LDFLAGS  = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc -arch ppc7400 -arch ppc970 -framework IOKit -framework CoreFoundation -framework Carbon -bundle -undefined dynamic_lookup
 
+OBJ_PLUGIN	=	src/main.o \
+			src/cppifce.o \
+			src/usbifce.o \
+			src/x52.o \
+			src/usb/usb.o \
+			src/usb/darwin.o \
+			src/usb/descriptors.o \
+			src/usb/error.o
+
 ###########################################################
 
-print_error = (echo "\033[0;31m[ FAILED ]\033[0m" && false)
 clearscreen = echo "\033[2J\033[H"
 
-###########################################################
+print_clean = echo "\033[0;31mcleaning x52control (mac)\033[0m"
 
-CSRC	= $(wildcard src/*.c)
-CPPSRC	= $(wildcard src/*.cpp)
-COBJ	= $(patsubst %.c, $(INTDIR)/%.o, $(CSRC))
-CPPOBJ	= $(patsubst %.cpp, $(INTDIR)/%.opp, $(CPPSRC))
+print_link = echo "\033[0;34m[ linking     ]\033[0m: " && basename
+print_comp = echo "\033[0;32m[ compiling   ]\033[0m: " && basename
+print_arch = echo "\033[0;34m[ archiving   ]\033[0m: " && basename
+
+print_error = (echo "\033[0;31m[ FAILED ]\033[0m" && false)
+
+###########################################################
 
 .SILENT:
 
-all:		init make_dirs $(OUTDIR)/$(TARGET)
-	echo "\033[0;36m[ finished    ]\033[0m"
-
-init:
-	echo "\033[0;36mstarting build\033[0m"
+all:	make_dirs $(OUTDIR)/$(TARGET)
 
 make_dirs:
-	-mkdir -p $(OUTDIR)
-	-mkdir -p $(INTDIR)/src
+	-mkdir -p $(INTDIR)
 
-$(INTDIR)/src/%.o: $(PWD)/src/%.c
-	echo "\033[0;32m[ compiling   ]\033[0m: " $@
-	$(CC) $(CFLAGS) -c -o $@ $< || $(print_error)
+%.o: %.c
+	$(print_comp) $@
+	$(CC) $(CFLAGS) $(DEFS) -c -o $@ $< || $(print_error)
 
-$(INTDIR)/src/%.opp: $(PWD)/src/%.cpp
-	echo "\033[0;32m[ compiling   ]\033[0m: " $@
-	$(CPP) $(CFLAGS) -c -o $@ $< || $(print_error)
+%.o: %.cpp
+	$(print_comp) $@
+	$(CPP) $(CPPFLAGS) $(DEFS) -c -o $@ $< || $(print_error)
 
-$(OUTDIR)/$(TARGET):	$(COBJ) $(CPPOBJ)
-	echo "\033[0;34m[ linking     ]\033[0m: " $@
-	$(LD) $(LDFLAGS) -o $(OUTDIR)/$(TARGET) $(COBJ) $(CPPOBJ) || $(print_error)
+$(OUTDIR)/$(TARGET):	$(OBJ_PLUGIN)
+	$(print_link) $@
+	$(LD) $(LDFLAGS) -o $(OUTDIR)/$(TARGET) $(OBJ_PLUGIN) || $(print_error)
 
 clean:
-	-rm -rdf build
+	$(print_clean)
+	-rm -rdf $(OUTDIR)
+	-rm -rdf $(OBJ_PLUGIN)
+	-find . -name ".DS_Store" -depth -exec rm {} \;
