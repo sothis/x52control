@@ -16,6 +16,7 @@ OBJ_PLUGIN	=	src/main.o \
 				src/cppifce.o \
 				src/usbifce.o \
 				src/x52.o \
+				src/output.o \
 				src/usb/usb.o \
 				src/usb/darwin.o \
 				src/usb/descriptors.o \

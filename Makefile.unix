@@ -16,10 +16,9 @@ LDFLAGS		= -m32 -nostdlib -Wl,-shared,-export-dynamic,-soname,$(TARGET),-s
 ARFLAGS		= rcs
 
 OBJ_PLUGIN	=	src/main.o \
-				src/cppifce.o \
-				src/usbifce.o \
-				src/x52.o \
-				src/output.o \
+				src/x52tools.o \
+				src/x52data.o \
+				src/x52out.o \
 				src/usb/usb.o \
 				src/usb/linux.o \
 				src/usb/descriptors.o \

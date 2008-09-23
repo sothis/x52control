@@ -1,12 +1,14 @@
 #include <string.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include "usb/usb.h"
-#include "output.h"
-#include "XPLM/XPLMProcessing.h"
+#include "x52out.h"
+
+extern const char* version;
 
 #define STANDARD_MSG		"   Saitek X52\n     Flight\n Control System"
 #define STANDARD_MSG_PRO	" Saitek X52 Pro\n     Flight\n Control System"
+#define WELCOME_MSG			"   x52control\n \n      ver %s", version
 
 enum devices_e
 {
@@ -16,14 +18,7 @@ enum devices_e
 	yoke_device				= 0x0BAC
 };
 
-enum dbgtype_e
-{
-	info,
-	warn,
-	err
-};
-
-x52out_t::x52out_t(void) : verbose(false)
+x52out_t::x52out_t(void)
 {
 	usb_bus* bus				= 0;
 	struct usb_device* joydev	= 0;
@@ -74,50 +69,38 @@ x52out_t::x52out_t(void) : verbose(false)
 
 	a_usbhdl = usb_open(joydev);
     if (!a_usbhdl) throw "could not open joystick";
+	display_brightness(70);
+	led_brightness(70);
+	print(WELCOME_MSG);
 }
 
 x52out_t::~x52out_t(void)
 {
-	debug_out(warn, "start unloading");
-	usb_close(a_usbhdl);
-	debug_out(warn, "unloading succeeded");
-}
-
-void x52out_t::debug_out(int type, const char* msg, ...)
-{
-	va_list ap;
-	va_start(ap, msg);
-	switch (type)
+	debug_out(warn, "disconnecting joystick");
+	switch (product)
 	{
-		case info:
-			if (verbose)
-			{
-				printf("\033[0;32m[x52control]\033[0m: ");
-				vprintf(msg, ap);
-				printf("\n");
-			}
+		case x52_standard_device:
+		case x52_standard_device2:
+			print(STANDARD_MSG);
 			break;
-		case warn:
-			printf("\033[0;34m[x52control]\033[0m: ");
-			vprintf(msg, ap);
-			printf("\n");
+		case x52_pro_device:
+			print(STANDARD_MSG_PRO);
 			break;
-		case err:
+		case yoke_device:
 		default:
-			printf("\033[0;31m[x52control]\033[0m: ");
-			vprintf(msg, ap);
-			printf("\n");
+			print("");
 			break;
 	}
-	va_end(ap);
+	usb_close(a_usbhdl);
+	debug_out(warn, "joystick disconnected");
 }
 
-void x52out_t::refresh(const out_param_t* param)
+void x52out_t::refresh(void* param)
 {
+	if (!param) return;
 	pthread_mutex_lock(&param_mutex);
-	memcpy(&current_param, const_cast<out_param_t*>(param), sizeof(out_param_t));
+	memcpy(&current_param, reinterpret_cast<out_param_t*>(param), sizeof(out_param_t));
 	pthread_mutex_unlock(&param_mutex);
-	XPLMSetFlightLoopCallbackInterval(x52out_t::update, -1.0f, 1, this);
 }
 
 /* static member, x-plane calls this one */
@@ -147,17 +130,43 @@ void x52out_t::set_verbose(bool verb)
 	verbose = verb;
 }
 
-void x52out_t::print(const char* text)
+void x52out_t::display_brightness(char brightness)
+{
+	try
+	{
+		setbrightness(true, brightness);
+	}
+	catch (const char* reason)
+	{
+		debug_out(err, reason);
+	}
+}
+
+void x52out_t::led_brightness(char brightness)
+{
+	try
+	{
+		setbrightness(false, brightness);
+	}
+	catch (const char* reason)
+	{
+		debug_out(err, reason);
+	}
+}
+
+void x52out_t::print(const char* t, ...)
 {
 	int n_lf = 0;
-	if (!text || product == yoke_device) return;
-	if (!strlen(text))
-		clear();
-	char* temp = new char[strlen(text)];
-	if (!temp) return;
-	strcpy(temp, text);
+	char text[2048] = {};
+	if (!t || product == yoke_device) return;
+	clear();
+	if (!strlen(t)) return;
+	va_list ap;
+	va_start(ap, t);
+	vsnprintf(text, 2048, t, ap);
+	va_end(ap);
 
-	char* token = strtok(temp, "\n");
+	char* token = strtok(text, "\n");
     while(token && (n_lf < 3))
     {
 		char line[17] = {};
@@ -174,7 +183,6 @@ void x52out_t::print(const char* text)
 		n_lf++;
 		token = strtok(0, "\n");
     }
-	delete[] temp;
 }
 
 void x52out_t::clear(void)
@@ -193,6 +201,16 @@ void x52out_t::clear(void)
 }
 
 /* private members */
+
+void x52out_t::setbrightness(bool mfd, char brightness)
+{
+    int res = 0;
+
+	res =	usb_control_msg(a_usbhdl, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, 0x91,
+							brightness, mfd ? 0xB1:0xB2, 0, 0, 100);
+	if (res < 0)
+		throw "could not set brightness";
+}
 
 void x52out_t::settext(int line, const char *text, int length)
 {
