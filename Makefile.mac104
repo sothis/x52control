@@ -13,10 +13,9 @@ CPPFLAGS	= $(CFLAGS)
 LDFLAGS		= -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc -arch ppc7400 -arch ppc970 -framework IOKit -framework CoreFoundation -framework Carbon -bundle -undefined dynamic_lookup
 
 OBJ_PLUGIN	=	src/main.o \
-				src/cppifce.o \
-				src/usbifce.o \
-				src/x52.o \
-				src/output.o \
+				src/x52tools.o \
+				src/x52data.o \
+				src/x52out.o \
 				src/usb/usb.o \
 				src/usb/darwin.o \
 				src/usb/descriptors.o \
