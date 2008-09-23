@@ -1,31 +1,31 @@
-TARGET   = mac.xpl
-OUTDIR   = build
-INTDIR   = $(OUTDIR)/obj
+TARGET	= mac.xpl
+OUTDIR	= build
+INTDIR	= $(OUTDIR)/obj
 
-CC       = gcc
-CPP      = g++
-LD       = gcc
+CC		= gcc-4.0
+CPP		= g++-4.0
+LD		= g++-4.0
 
-DEFS     = -DAPL -DPIC
+DEFS	= -DAPL -DPIC -DLIL -DXPML200
 
-CFLAGS   = -O2 -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc -arch ppc7400 -arch ppc970
-CPPFLAGS = $(CFLAGS)
-LDFLAGS  = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc -arch ppc7400 -arch ppc970 -framework IOKit -framework CoreFoundation -framework Carbon -bundle -undefined dynamic_lookup
+CFLAGS		= -O2 -fPIC -fomit-frame-pointer -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc -arch ppc7400 -arch ppc970
+CPPFLAGS	= $(CFLAGS)
+LDFLAGS		= -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc -arch ppc7400 -arch ppc970 -framework IOKit -framework CoreFoundation -framework Carbon -bundle -undefined dynamic_lookup
 
 OBJ_PLUGIN	=	src/main.o \
-			src/cppifce.o \
-			src/usbifce.o \
-			src/x52.o \
-			src/usb/usb.o \
-			src/usb/darwin.o \
-			src/usb/descriptors.o \
-			src/usb/error.o
+				src/cppifce.o \
+				src/usbifce.o \
+				src/x52.o \
+				src/usb/usb.o \
+				src/usb/darwin.o \
+				src/usb/descriptors.o \
+				src/usb/error.o
 
 ###########################################################
 
 clearscreen = echo "\033[2J\033[H"
 
-print_clean = echo "\033[0;31mcleaning x52control (mac)\033[0m"
+print_clean = echo "\033[0;31mcleaning x52control (mac 10.4)\033[0m"
 
 print_link = echo "\033[0;34m[ linking     ]\033[0m: " && basename
 print_comp = echo "\033[0;32m[ compiling   ]\033[0m: " && basename
@@ -59,3 +59,4 @@ clean:
 	-rm -rdf $(OUTDIR)
 	-rm -rdf $(OBJ_PLUGIN)
 	-find . -name ".DS_Store" -depth -exec rm {} \;
+

@@ -1,28 +1,29 @@
-TARGET   = lin.xpl
-OUTDIR   = build
-INTDIR   = $(OUTDIR)/obj
+TARGET	= lin.xpl
+OUTDIR	= build
+INTDIR	= $(OUTDIR)/obj
 
-CC       = gcc
-CPP      = g++
-LD       = gcc
-AR	 = ar
+CC		= gcc
+CPP		= g++
+LD		= g++
+AR		= ar
 
-DEFS     = -DLIN -DLIL -DPIC
+DEFS	= -DLIN -DLIL -DPIC -DXPML200
 
-CFLAGS   = -m32 -O2 -Wall
-CPPFLAGS = $(CFLAGS)
-#LDFLAGS  = -m32 -nostdlib -Wl,--unresolved-symbols=report-all,-shared,-export-dynamic,-soname,$(TARGET),-s
-LDFLAGS  = -m32 -nostdlib -Wl,-shared,-export-dynamic,-soname,$(TARGET),-s
-ARFLAGS  = rcs
+CFLAGS		= -m32 -O2 -fPIC -fomit-frame-pointer -Wall
+CPPFLAGS	= $(CFLAGS)
+#LDFLAGS	= -m32 -nostdlib -Wl,--unresolved-symbols=report-all,-shared,-export-dynamic,-soname,$(TARGET),-s
+LDFLAGS		= -m32 -nostdlib -Wl,-shared,-export-dynamic,-soname,$(TARGET),-s
+ARFLAGS		= rcs
 
 OBJ_PLUGIN	=	src/main.o \
-			src/cppifce.o \
-			src/usbifce.o \
-			src/x52.o \
-			src/usb/usb.o \
-			src/usb/linux.o \
-			src/usb/descriptors.o \
-			src/usb/error.o
+				src/cppifce.o \
+				src/usbifce.o \
+				src/x52.o \
+				src/output.o \
+				src/usb/usb.o \
+				src/usb/linux.o \
+				src/usb/descriptors.o \
+				src/usb/error.o
 
 ###########################################################
 
@@ -53,7 +54,6 @@ make_dirs:
 	$(print_comp) $@
 	$(CPP) $(CPPFLAGS) $(DEFS) -c -o $@ $< || $(print_error)
 
-# TODO: determine libgcc dir (maybe via 'gcc -v'?)
 $(INTDIR)/cstd.a:
 	$(print_arch) $@
 	-mkdir -p $(INTDIR)/tmp

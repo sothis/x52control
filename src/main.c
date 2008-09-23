@@ -1,5 +1,3 @@
-#define XPML200
-
 #include <string.h>
 #include "XPLM/XPLMDefs.h"
 #include "cppifce.h"
@@ -24,31 +22,32 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 
 PLUGIN_API int XPluginStart(char* outName, char* outSig, char* outDesc)
 {
-    strcpy(outName, "x52control");
-    strcpy(outSig, "copai.equipment.x52control");
-
-    return cpp_plugin_start(outDesc);
+	strcpy(outName, "x52control");
+	strcpy(outSig, "copai.equipment.x52control");
+	strcpy(outDesc, "provides additional features for the Saitek X52 products");
+	return cpp_plugin_start();
 }
 
 PLUGIN_API void XPluginStop(void)
 {
-    cpp_plugin_stop();
-    return;
+	cpp_plugin_stop();
+	return;
 }
 
 PLUGIN_API void XPluginDisable(void)
 {
-    cpp_plugin_disable();
-    return;
+	cpp_plugin_disable();
+	return;
 }
 
 PLUGIN_API int XPluginEnable(void)
 {
-    return cpp_plugin_enable();
+	return cpp_plugin_enable();
 }
 
 PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFromWho, long inMessage, void* inParam)
 {
-    cpp_plugin_recvmsg(inFromWho, inMessage, inParam);
-    return;
+	cpp_plugin_recvmsg(inFromWho, inMessage, inParam);
+	return;
 }
+

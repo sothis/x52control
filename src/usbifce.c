@@ -64,7 +64,7 @@ int x52_cleartext(struct x52 *x52, int line)
     if (line > 2) return -1;
     r = usb_control_msg(x52->hdl,
                         USB_TYPE_VENDOR|USB_RECIP_DEVICE|USB_ENDPOINT_OUT,
-                        X52PRO_REQUEST, 0x00, clear_idx[line], NULL, 0, 1000);
+                        X52PRO_REQUEST, 0x00, clear_idx[line], NULL, 0, 100);
     if (r < 0)
     {
         x52printf(stderr, "x52_settext failed at clear command (%s)\n",
@@ -91,7 +91,9 @@ int x52_settext(struct x52 *x52, int line, char *text, int length)
         return -3;
     }
     if (line > 2) return -1;
-    x52_cleartext(x52, line);
+	usb_control_msg(x52->hdl,
+                    USB_TYPE_VENDOR|USB_RECIP_DEVICE|USB_ENDPOINT_OUT,
+                    X52PRO_REQUEST, 0x00, clear_idx[line], NULL, 0, 100);
     while (length >= 1)
     {
         int chars;
@@ -99,7 +101,7 @@ int x52_settext(struct x52 *x52, int line, char *text, int length)
         else chars = *(unsigned short*) text;
         r = usb_control_msg(x52->hdl,
                             USB_TYPE_VENDOR|USB_RECIP_DEVICE|USB_ENDPOINT_OUT,
-                            X52PRO_REQUEST, chars, write_idx[line], NULL, 0, 1000);
+                            X52PRO_REQUEST, chars, write_idx[line], NULL, 0, 100);
         if (r<0)
         {
             x52printf(stderr, "x52_settext failed at write %d (%s)\n",
@@ -123,7 +125,7 @@ int x52_setbri(struct x52 *x52, int mfd, int brightness)
     r = usb_control_msg(x52->hdl,
                         USB_TYPE_VENDOR|USB_RECIP_DEVICE|USB_ENDPOINT_OUT,
                         X52PRO_REQUEST, brightness, mfd ? X52PRO_MFDBRI : X52PRO_LEDBRI,
-                        NULL, 0, 1000);
+                        NULL, 0, 100);
     if (r < 0)
     {
         x52printf(stderr, "x52_setbri failed (%s)\n", usb_strerror());
@@ -145,7 +147,7 @@ int x52_setled(struct x52 *x52, int led, int on)
     r = usb_control_msg(x52->hdl,
                         USB_TYPE_VENDOR|USB_RECIP_DEVICE|USB_ENDPOINT_OUT,
                         X52PRO_REQUEST, on | (led<<8), X52PRO_SETLED,
-                        NULL, 0, 1000);
+                        NULL, 0, 100);
     if (r < 0)
     {
         x52printf(stderr, "x52_setled failed (%s)\n", usb_strerror());
@@ -161,7 +163,7 @@ int x52_settime(struct x52 *x52, int h24, int hour, int minute)
     r = usb_control_msg(x52->hdl,
                         USB_TYPE_VENDOR|USB_RECIP_DEVICE|USB_ENDPOINT_OUT,
                         X52PRO_REQUEST, minute | (hour<<8) | (h24?0x8000:0), X52PRO_TIME,
-                        NULL, 0, 1000);
+                        NULL, 0, 100);
     if (r < 0)
     {
         x52printf(stderr, "x52_settime failed (%s)\n", usb_strerror());
@@ -177,7 +179,7 @@ int x52_setoffs(struct x52 *x52, int idx, int h24, int inv, int offset)
     r = usb_control_msg(x52->hdl,
                         USB_TYPE_VENDOR|USB_RECIP_DEVICE|USB_ENDPOINT_OUT, X52PRO_REQUEST,
                         offset | (inv?1024:0) | (h24?0x8000:0), idx?X52PRO_OFFS3:X52PRO_OFFS2,
-                        NULL, 0, 1000);
+                        NULL, 0, 100);
     if (r < 0)
     {
         x52printf(stderr, "x52_settime failed (%s)\n", usb_strerror());
@@ -198,7 +200,7 @@ int x52_setsecond(struct x52 *x52, int second)
     r = usb_control_msg(x52->hdl,
                         USB_TYPE_VENDOR|USB_RECIP_DEVICE|USB_ENDPOINT_OUT,
                         X52PRO_REQUEST, second<<8, YOKE_SECOND,
-                        NULL, 0, 1000);
+                        NULL, 0, 100);
     if (r < 0)
     {
         x52printf(stderr, "x52_setsecond failed (%s)\n", usb_strerror());
@@ -219,7 +221,7 @@ int x52_setdate(struct x52 *x52, int year, int month, int day)
     r = usb_control_msg(x52->hdl,
                         USB_TYPE_VENDOR|USB_RECIP_DEVICE|USB_ENDPOINT_OUT,
                         X52PRO_REQUEST, day | (month<<8), X52PRO_DATE,
-                        NULL, 0, 1000);
+                        NULL, 0, 100);
     if (r < 0)
     {
         x52printf(stderr, "x52_setdate failed (%s)\n", usb_strerror());
@@ -228,7 +230,7 @@ int x52_setdate(struct x52 *x52, int year, int month, int day)
     r = usb_control_msg(x52->hdl,
                         USB_TYPE_VENDOR|USB_RECIP_DEVICE|USB_ENDPOINT_OUT,
                         X52PRO_REQUEST, year, X52PRO_YEAR,
-                        NULL, 0, 1000);
+                        NULL, 0, 100);
     if (r < 0)
     {
         x52printf(stderr, "x52_setdate failed for year (%s)\n", usb_strerror());
@@ -242,7 +244,7 @@ int x52_custom(struct x52 *x52, int index, int value)
 
     int r = usb_control_msg(x52->hdl,
                             USB_TYPE_VENDOR|USB_RECIP_DEVICE|USB_ENDPOINT_OUT,
-                            X52PRO_REQUEST, value, index, NULL, 0, 1000);
+                            X52PRO_REQUEST, value, index, NULL, 0, 100);
     if (r < 0)
     {
         x52printf(stderr, "x52_settext failed at clear command (%s)\n",

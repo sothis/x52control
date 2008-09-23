@@ -1,11 +1,11 @@
-#ifndef _MAIN_H
-#define _MAIN_H
+#ifndef CPPIFCE_H
+#define CPPIFCE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int cpp_plugin_start(char* outDesc);
+int cpp_plugin_start(void);
 void cpp_plugin_stop(void);
 int cpp_plugin_enable(void);
 void cpp_plugin_disable(void);
@@ -15,4 +15,5 @@ void cpp_plugin_recvmsg(int from, long msg, void* param);
 }
 #endif
 
-#endif /* _MAIN_H */
+#endif /* CPPIFCE_H */
+
