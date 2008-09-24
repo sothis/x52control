@@ -1,9 +1,40 @@
 #ifndef X52DATA_H
 #define X52DATA_H
 
-#include <pthread.h>
 #include <set>
+#include <string>
 #include "x52tools.h"
+
+class x52mfdpage_t;
+
+class x52datasource_t : public x52object_t, public x52tools_t
+{
+	friend class x52data_t;
+	public:
+		x52datasource_t(const char* ref);
+		~x52datasource_t(void);
+
+		const std::string& name(void);
+		bool newdata_available(void);
+		void mark_dirty(void);
+		operator int(void);
+		operator float(void);
+		operator double(void);
+		operator const std::string&(void);
+		operator const char*(void);
+	private:
+		bool refresh(void);
+
+		std::string	a_name;
+		void*		a_ref;
+		int			a_reftype;
+		bool		a_newdata;
+		bool		a_isdirty;
+		int			a_dint;
+		float		a_dfloat;
+		double		a_ddouble;
+		std::string	a_dstring;
+};
 
 class x52data_t : public x52tools_t
 {
@@ -11,19 +42,23 @@ class x52data_t : public x52tools_t
 		x52data_t(void);
 		~x52data_t(void);
 		
-		void refresh_listeners(void);
-		void add_listener(x52listener_t* listener);
-		void remove_listener(x52listener_t* listener);
-		void engage(float interval);
-		void stop();
+		void add_listener(x52mfdpage_t* listener);
+		void remove_listener(x52mfdpage_t* listener);
+		x52datasource_t* add_datasource(const char* ref);
+		void remove_datasource(x52datasource_t* source);
+		void remove_datasource(const char* ref);
+		void connect(float interval);
+		void disconnect();
 		const float& upd_interval(void);
-		out_param_t& current_state(void);
 
-		static float update(float elapsed_lastcall, float elapsed_lastloop, int n_loop, void* arg);
 	private:
-		std::set<x52listener_t*> a_listeners;
+		static float update(float elapsed_lastcall, float elapsed_lastloop, int n_loop, void* arg);
+		void refresh_datasources(void);
+		void refresh_listeners(x52datasource_t* updated_source);
+		std::set<x52mfdpage_t*> a_listeners;
+		std::set<x52datasource_t*> a_datasources;
+		std::set<x52mfdpage_t*> a_wantsupdate;
 		float a_interval;
-		out_param_t current_data;
 };
 
 #endif /* X52DATA_H */

@@ -1,11 +1,7 @@
 #ifndef X52TOOLS_H
 #define X52TOOLS_H
 
-typedef struct out_param_t
-{
-	float	next_call;
-	char	text[51];
-} out_param_t;
+#include <string>
 
 class x52tools_t
 {
@@ -23,11 +19,19 @@ class x52tools_t
 	private:
 };
 
+class x52object_t
+{};
+
 class x52listener_t
 {
-	public:
-		virtual void refresh(void* param){};
+public:
+	virtual const std::string& name(void)=0;
+private:
+	virtual bool has_object(x52object_t* obj)=0;
+	virtual bool refresh(x52object_t* obj)=0;
+	virtual void final_refresh(void)=0;
 };
+
 
 #endif /* X52TOOLS_H */
 

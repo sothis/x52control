@@ -6,16 +6,19 @@ CC			= gcc-4.2
 CPP			= g++-4.2
 LD			= gcc-4.2
 
-DEFS		= -DAPL -DPIC -DLIL -DXPML200
+DEFS		= -DAPL -DPIC -DLIL -DXPLM200
 
 CFLAGS		= -O2 -fPIC -fomit-frame-pointer -mmacosx-version-min=10.5 -arch i386 -arch ppc -arch x86_64 -arch ppc64 -arch ppc970 
 CPPFLAGS	= $(CFLAGS)
 LDFLAGS		= -mmacosx-version-min=10.5 -arch i386 -arch ppc -arch x86_64 -arch ppc64 -arch ppc970 -framework IOKit -framework CoreFoundation -framework Carbon -bundle -undefined dynamic_lookup
 
 OBJ_PLUGIN	=	src/main.o \
+				src/x52session.o \
 				src/x52tools.o \
 				src/x52data.o \
 				src/x52out.o \
+				src/x52in.o \
+				src/x52mfdpage.o \
 				src/usb/usb.o \
 				src/usb/darwin.o \
 				src/usb/descriptors.o \
@@ -52,7 +55,7 @@ make_dirs:
 
 $(OUTDIR)/$(TARGET):	$(OBJ_PLUGIN)
 	$(print_link) $@
-	$(LD) $(LDFLAGS) -o $(OUTDIR)/$(TARGET) $(OBJ_PLUGIN) || $(print_error)
+	$(LD) $(LDFLAGS) -o @ $(OBJ_PLUGIN) || $(print_error)
 
 clean:
 	$(print_clean)

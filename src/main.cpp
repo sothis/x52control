@@ -1,9 +1,7 @@
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "XPLM/XPLMDefs.h"
-#include "x52out.h"
-#include "x52data.h"
+#include "x52session.h"
 
 const char* version = "0.3.0";
 
@@ -39,8 +37,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 }
 #endif
 
-static x52out_t* x52out = 0;
-static x52data_t* x52data = 0;
+static x52session_t* x52session = 0;
 
 PLUGIN_API int XPluginStart(char* name, char* signature, char* description)
 {
@@ -52,42 +49,34 @@ PLUGIN_API int XPluginStart(char* name, char* signature, char* description)
 	strcat(description, __DATE__);
 	try
 	{
-		x52out = new x52out_t();
-		x52data = new x52data_t();
+		x52session = new x52session_t();
 	}
-	catch (const char* reason)
+	catch(const char* e)
 	{
-		printf("\033[0;31m[x52control]\033[0m: %s\n", reason);
-		return 0;
-	}
-	catch(...)
-	{
-		printf("\033[0;31m[x52control]\033[0m: unhandled exception.\n");
-		abort();
+		if (!strcmp(e, "x52control.nonfatal"))
+			return 0;
+		else
+			abort();
 	}
     return 1;
 }
 
 PLUGIN_API int XPluginEnable(void)
 {
-	if (!x52out || !x52data) return 0;
-	x52data->add_listener(x52out);
-	x52data->engage(0.1f);
-    return 1;
+	if (!x52session) return 0;
+    return x52session->enable();
 }
 
 PLUGIN_API void XPluginDisable(void)
 {
-	if (!x52out || !x52data) return;
-	x52data->remove_listener(x52out);
-	x52data->stop();
+	if (!x52session) return;
+	x52session->disable();
 	return;
 }
 
 PLUGIN_API void XPluginStop(void)
 {
-	if (x52data) delete x52data;
-	if (x52data) delete x52out;
+	if (x52session) delete x52session;
 	return;
 }
 

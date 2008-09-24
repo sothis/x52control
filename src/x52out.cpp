@@ -25,9 +25,7 @@ x52out_t::x52out_t(void)
 	struct usb_device* dev		= 0;
 	usb_device_descriptor* dsc	= 0;
 
-	pthread_mutex_init(&param_mutex, NULL);
-
-	debug_out(warn, "searching for joystick");
+	debug_out(info, "searching for joystick");
 	usb_init();
 	usb_find_busses();
 	usb_find_devices();
@@ -69,14 +67,13 @@ x52out_t::x52out_t(void)
 
 	a_usbhdl = usb_open(joydev);
     if (!a_usbhdl) throw "could not open joystick";
-	display_brightness(70);
-	led_brightness(70);
+	display_brightness(0x7F);
+	led_brightness(0x7F);
 	print(WELCOME_MSG);
 }
 
 x52out_t::~x52out_t(void)
 {
-	debug_out(warn, "disconnecting joystick");
 	switch (product)
 	{
 		case x52_standard_device:
@@ -92,42 +89,7 @@ x52out_t::~x52out_t(void)
 			break;
 	}
 	usb_close(a_usbhdl);
-	debug_out(warn, "joystick disconnected");
-}
-
-void x52out_t::refresh(void* param)
-{
-	if (!param) return;
-	pthread_mutex_lock(&param_mutex);
-	memcpy(&current_param, reinterpret_cast<out_param_t*>(param), sizeof(out_param_t));
-	pthread_mutex_unlock(&param_mutex);
-}
-
-/* static member, x-plane calls this one */
-float x52out_t::update(float elapsed_lastcall, float elapsed_lastloop, int n_loop, void* arg)
-{
-	x52out_t* me = reinterpret_cast<x52out_t*>(arg);
-	pthread_mutex_lock(&me->parameter_mutex());
-	float res = me->current_state().next_call;
-	me->debug_out(info, "updating joystick state (loop %d)", n_loop);
-	me->print(me->current_state().text);
-	pthread_mutex_unlock(&me->parameter_mutex());
-	return res;
-}
-
-const out_param_t& x52out_t::current_state(void)
-{
-	return current_param;
-}
-
-pthread_mutex_t& x52out_t::parameter_mutex(void)
-{
-	return param_mutex;
-}
-
-void x52out_t::set_verbose(bool verb)
-{
-	verbose = verb;
+	debug_out(info, "joystick disconnected");
 }
 
 void x52out_t::display_brightness(char brightness)
@@ -138,7 +100,7 @@ void x52out_t::display_brightness(char brightness)
 	}
 	catch (const char* reason)
 	{
-		debug_out(err, reason);
+		debug_out(err, "%s of multifunction display", reason);
 	}
 }
 
@@ -150,20 +112,33 @@ void x52out_t::led_brightness(char brightness)
 	}
 	catch (const char* reason)
 	{
-		debug_out(err, reason);
+		debug_out(err, "%s of LED's", reason);
 	}
+}
+
+void x52out_t::set_textdata(const char* text)
+{
+	if (!text) return;
+	a_textdata.assign(text);
+}
+
+void x52out_t::print()
+{
+	print(a_textdata.c_str());
 }
 
 void x52out_t::print(const char* t, ...)
 {
 	int n_lf = 0;
-	char text[2048] = {};
+	// the display only supports 48 characters, we allow 2 additional newline
+	// characters and a terminating null byte, any additional characters are discarded
+	char text[51] = {};
 	if (!t || product == yoke_device) return;
-	clear();
+	//clear();
 	if (!strlen(t)) return;
 	va_list ap;
 	va_start(ap, t);
-	vsnprintf(text, 2048, t, ap);
+	vsnprintf(text, 51, t, ap);
 	va_end(ap);
 
 	char* token = strtok(text, "\n");
@@ -178,7 +153,7 @@ void x52out_t::print(const char* t, ...)
 		}
 		catch (const char* reason)
 		{
-			debug_out(err, reason);
+			debug_out(err, "%s (%s)", reason, line);
 		}
 		n_lf++;
 		token = strtok(0, "\n");
@@ -200,6 +175,7 @@ void x52out_t::clear(void)
 	}
 }
 
+
 /* private members */
 
 void x52out_t::setbrightness(bool mfd, char brightness)
@@ -207,7 +183,7 @@ void x52out_t::setbrightness(bool mfd, char brightness)
     int res = 0;
 
 	res =	usb_control_msg(a_usbhdl, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, 0x91,
-							brightness, mfd ? 0xB1:0xB2, 0, 0, 100);
+							brightness, mfd?0xB1:0xB2, 0, 0, 100);
 	if (res < 0)
 		throw "could not set brightness";
 }
