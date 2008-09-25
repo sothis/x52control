@@ -91,7 +91,7 @@ int x52_settext(struct x52 *x52, int line, char *text, int length)
         return -3;
     }
     if (line > 2) return -1;
-	usb_control_msg(x52->hdl,
+    usb_control_msg(x52->hdl,
                     USB_TYPE_VENDOR|USB_RECIP_DEVICE|USB_ENDPOINT_OUT,
                     X52PRO_REQUEST, 0x00, clear_idx[line], NULL, 0, 100);
     while (length >= 1)

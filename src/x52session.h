@@ -9,17 +9,16 @@ class x52data_t;
 
 class x52session_t : public x52tools_t
 {
-	public:
-		x52session_t(void);
-		~x52session_t(void);
-		int enable(void);
-		void disable(void);
-	private:
-		void create_defaultpages(void);
-		x52out_t*	a_joystickout;
-		x52in_t*	a_joystickin;
-		x52data_t*	a_dataconnection;
+public:
+    x52session_t(void);
+    ~x52session_t(void);
+    int enable(void);
+    void disable(void);
+private:
+    void create_defaultpages(void);
+    x52out_t* a_joystickout;
+    x52in_t* a_joystickin;
+    x52data_t* a_dataconnection;
 };
 
 #endif /* X52SESSION_H */
-

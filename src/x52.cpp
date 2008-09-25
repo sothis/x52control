@@ -361,9 +361,9 @@ void X52::stop(bool join)
     {
         // we won't join the input thread on linux, since read
         // blocks, and select is teh suck, maybe trying poll()?
-        #if APL
+#if APL
         pthread_join(_ptInput, NULL);
-        #endif
+#endif
     }
 
     pthread_detach(_ptInput);
@@ -400,7 +400,7 @@ void* X52::x52_thread(void* arg)
     if (tmp) tmp->x52_update();
     pthread_exit(NULL);
 
-	return NULL;
+    return NULL;
 }
 
 void X52::x52_update(void)
@@ -430,7 +430,7 @@ void* X52::input_thread(void* arg)
     X52* tmp = reinterpret_cast<X52*>(arg);
     if (tmp) tmp->process_input();
     pthread_exit(NULL);
-	return NULL;
+    return NULL;
 }
 
 void X52::process_input(void)
@@ -608,121 +608,121 @@ void X52::dispatch_input(int number, int value)
 {
     switch (number)
     {
-        case X52B_FUNCTION_UP:
-            if (!value) break;
-            datacycle_up();
-            break;
-        case X52B_FUNCTION_DOWN:
-            if (!value) break;
-            datacycle_down();
-            break;
-        default:
-            break;
+    case X52B_FUNCTION_UP:
+        if (!value) break;
+        datacycle_up();
+        break;
+    case X52B_FUNCTION_DOWN:
+        if (!value) break;
+        datacycle_down();
+        break;
+    default:
+        break;
     }
     return;
 }
 
 void X52::HIDGetElementInfo (CFTypeRef refElement, element* pElement)
 {
-	long number;
-	CFTypeRef refType;
-    
-	refType = CFDictionaryGetValue ((__CFDictionary*)refElement, CFSTR(kIOHIDElementCookieKey));
-	if (refType && CFNumberGetValue ((__CFNumber*)refType, kCFNumberLongType, &number))
+    long number;
+    CFTypeRef refType;
+
+    refType = CFDictionaryGetValue ((__CFDictionary*)refElement, CFSTR(kIOHIDElementCookieKey));
+    if (refType && CFNumberGetValue ((__CFNumber*)refType, kCFNumberLongType, &number))
     {
-		pElement->cookie = (IOHIDElementCookie) number;
+        pElement->cookie = (IOHIDElementCookie) number;
     }
-}			
+}
 
 void X52::HIDAddElement (CFTypeRef refElement, x52device* pDevice)
 {
-	long elementType, usagePage, usage;
-	CFTypeRef refElementType = CFDictionaryGetValue ((__CFDictionary*)refElement, CFSTR(kIOHIDElementTypeKey));
-	CFTypeRef refUsagePage = CFDictionaryGetValue ((__CFDictionary*)refElement, CFSTR(kIOHIDElementUsagePageKey));
-	CFTypeRef refUsage = CFDictionaryGetValue ((__CFDictionary*)refElement, CFSTR(kIOHIDElementUsageKey));
-    
-    
-	if ((refElementType) && (CFNumberGetValue ((__CFNumber*)refElementType, kCFNumberLongType, &elementType)))
-	{
-		if ((elementType == kIOHIDElementTypeInput_Misc) || (elementType == kIOHIDElementTypeInput_Button) ||
-			(elementType == kIOHIDElementTypeInput_Axis))
-		{
-			if (refUsagePage && CFNumberGetValue ((__CFNumber*)refUsagePage, kCFNumberLongType, &usagePage) &&
-				refUsage && CFNumberGetValue ((__CFNumber*)refUsage, kCFNumberLongType, &usage))
-			{
-				switch (usagePage)
-				{
-					case kHIDPage_GenericDesktop:
+    long elementType, usagePage, usage;
+    CFTypeRef refElementType = CFDictionaryGetValue ((__CFDictionary*)refElement, CFSTR(kIOHIDElementTypeKey));
+    CFTypeRef refUsagePage = CFDictionaryGetValue ((__CFDictionary*)refElement, CFSTR(kIOHIDElementUsagePageKey));
+    CFTypeRef refUsage = CFDictionaryGetValue ((__CFDictionary*)refElement, CFSTR(kIOHIDElementUsageKey));
+
+
+    if ((refElementType) && (CFNumberGetValue ((__CFNumber*)refElementType, kCFNumberLongType, &elementType)))
+    {
+        if ((elementType == kIOHIDElementTypeInput_Misc) || (elementType == kIOHIDElementTypeInput_Button) ||
+                (elementType == kIOHIDElementTypeInput_Axis))
+        {
+            if (refUsagePage && CFNumberGetValue ((__CFNumber*)refUsagePage, kCFNumberLongType, &usagePage) &&
+                    refUsage && CFNumberGetValue ((__CFNumber*)refUsage, kCFNumberLongType, &usage))
+            {
+                switch (usagePage)
+                {
+                case kHIDPage_GenericDesktop:
+                {
+                    switch (usage)
                     {
-                        switch (usage)
-                        {
-                            case kHIDUsage_GD_X:
-                            case kHIDUsage_GD_Y:
-                            case kHIDUsage_GD_Z:
-                            case kHIDUsage_GD_Rx:
-                            case kHIDUsage_GD_Ry:
-                            case kHIDUsage_GD_Rz:
-                            case kHIDUsage_GD_Slider:
-                            case kHIDUsage_GD_Dial:
-                            case kHIDUsage_GD_Wheel:
-                                HIDGetElementInfo (refElement, &curElement);
-                                pDevice->axes++;
-								break;
-                            case kHIDUsage_GD_Hatswitch:
-                                HIDGetElementInfo (refElement, &curElement);
-                                pDevice->hats++;
-								break;
-                        }
-						break;
+                    case kHIDUsage_GD_X:
+                    case kHIDUsage_GD_Y:
+                    case kHIDUsage_GD_Z:
+                    case kHIDUsage_GD_Rx:
+                    case kHIDUsage_GD_Ry:
+                    case kHIDUsage_GD_Rz:
+                    case kHIDUsage_GD_Slider:
+                    case kHIDUsage_GD_Dial:
+                    case kHIDUsage_GD_Wheel:
+                        HIDGetElementInfo (refElement, &curElement);
+                        pDevice->axes++;
+                        break;
+                    case kHIDUsage_GD_Hatswitch:
+                        HIDGetElementInfo (refElement, &curElement);
+                        pDevice->hats++;
+                        break;
                     }
-					case kHIDPage_Button:
-                      	HIDGetElementInfo (refElement, &curElement);
-                        buttonElements[pDevice->buttons] = curElement.cookie;
-                        buttonCookies[(int)curElement.cookie] = pDevice->buttons;
-                        pDevice->buttons++;
-						break;
-					default:
-						break;
-				}
-			}
-		}
+                    break;
+                }
+                case kHIDPage_Button:
+                    HIDGetElementInfo (refElement, &curElement);
+                    buttonElements[pDevice->buttons] = curElement.cookie;
+                    buttonCookies[(int)curElement.cookie] = pDevice->buttons;
+                    pDevice->buttons++;
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
         else if (kIOHIDElementTypeCollection == elementType)
-			HIDGetCollectionElements ((CFMutableDictionaryRef) refElement, pDevice);
-	}
+            HIDGetCollectionElements ((CFMutableDictionaryRef) refElement, pDevice);
+    }
 }
 
 void X52::HIDGetElementsCFArrayHandler (const void* value, void* parameter)
 {
     elemhandlerarg* arg = (elemhandlerarg*) parameter;
-	if (CFGetTypeID (value) == CFDictionaryGetTypeID ())
-		arg->sender->HIDAddElement ((CFTypeRef) value, arg->pDevice);
+    if (CFGetTypeID (value) == CFDictionaryGetTypeID ())
+        arg->sender->HIDAddElement ((CFTypeRef) value, arg->pDevice);
 }
 
 void X52::HIDGetElements (CFTypeRef refElementCurrent, x52device* pDevice)
 {
-	CFTypeID type = CFGetTypeID (refElementCurrent);
-	if (type == CFArrayGetTypeID()) /* if element is an array */
-	{
-		CFRange range = {0, CFArrayGetCount ((__CFArray*)refElementCurrent)};
-		/* CountElementsCFArrayHandler called for each array member */
+    CFTypeID type = CFGetTypeID (refElementCurrent);
+    if (type == CFArrayGetTypeID()) /* if element is an array */
+    {
+        CFRange range = {0, CFArrayGetCount ((__CFArray*)refElementCurrent)};
+        /* CountElementsCFArrayHandler called for each array member */
         ehArgs.sender = this;
         ehArgs.pDevice = pDevice;
-		CFArrayApplyFunction ((__CFArray*)refElementCurrent, range, HIDGetElementsCFArrayHandler, &ehArgs);
-	}
-}			
+        CFArrayApplyFunction ((__CFArray*)refElementCurrent, range, HIDGetElementsCFArrayHandler, &ehArgs);
+    }
+}
 
 void X52::HIDGetCollectionElements (CFMutableDictionaryRef deviceProperties, x52device* pDevice)
 {
-	CFTypeRef refElementTop = CFDictionaryGetValue (deviceProperties, CFSTR(kIOHIDElementKey));
-	if (refElementTop)
-		HIDGetElements (refElementTop, pDevice);
+    CFTypeRef refElementTop = CFDictionaryGetValue (deviceProperties, CFSTR(kIOHIDElementKey));
+    if (refElementTop)
+        HIDGetElements (refElementTop, pDevice);
 }
 
 CFMutableDictionaryRef X52::setup_dictionary(UInt32 usagePage, UInt32 usage)
 {
     CFNumberRef refUsage = NULL, refUsagePage = NULL;
     CFMutableDictionaryRef refHIDMatchDictionary = NULL;
-    
+
     // Set up a matching dictionary to search I/O Registry by class name for all HID class devices.
     refHIDMatchDictionary = IOServiceMatching (kIOHIDDeviceKey);
     if (refHIDMatchDictionary != NULL)
@@ -743,15 +743,15 @@ io_iterator_t X52::find_device(const mach_port_t masterPort, UInt32 usagePage, U
     CFMutableDictionaryRef hidMatchDictionary = NULL;
     IOReturn ioReturnValue = kIOReturnSuccess;
     io_iterator_t hidObjectIterator;
-    
+
     // Set up matching dictionary to search the I/O Registry for HID devices we are interested in. Dictionary reference is NULL if error.
     hidMatchDictionary = setup_dictionary(usagePage, usage);
     if (NULL == hidMatchDictionary)
         printf("Couldn’t create a matching dictionary.\n");
-    
+
     // Now search I/O Registry for matching devices.
     ioReturnValue = IOServiceGetMatchingServices (masterPort, hidMatchDictionary, &hidObjectIterator);
-    
+
     // IOServiceGetMatchingServices consumes a reference to the dictionary, so we don't need to release the dictionary ref.
     hidMatchDictionary = NULL;
     return hidObjectIterator;
@@ -763,7 +763,7 @@ int X52::is_x52product(io_registry_entry_t hidDevice)
     CFMutableDictionaryRef properties = 0;
     long vendor_id, product_id;
     CFTypeRef dict_value = 0;
-    
+
     result = IORegistryEntryCreateCFProperties(hidDevice, &properties, kCFAllocatorDefault, kNilOptions);
     if ((result != KERN_SUCCESS) || (!properties))
         return 0;
@@ -781,18 +781,18 @@ int X52::is_x52product(io_registry_entry_t hidDevice)
         return 0;
     switch (product_id)
     {
-        case 0x255:
-        case 0x75C:
-            HIDGetCollectionElements(properties, &curDevice);
-            return X52STD;
-        case 0x762:
-            HIDGetCollectionElements(properties, &curDevice);
-            return X52PRO;
-        case 0xBAC:
-            HIDGetCollectionElements(properties, &curDevice);
-            return YOKE;
-        default:
-            return OTHER;
+    case 0x255:
+    case 0x75C:
+        HIDGetCollectionElements(properties, &curDevice);
+        return X52STD;
+    case 0x762:
+        HIDGetCollectionElements(properties, &curDevice);
+        return X52PRO;
+    case 0xBAC:
+        HIDGetCollectionElements(properties, &curDevice);
+        return YOKE;
+    default:
+        return OTHER;
     }
     return OTHER;
 }
@@ -805,7 +805,7 @@ IOHIDDeviceInterface** X52::create_deviceinterface(io_object_t hidDevice)
     SInt32 score = 0;
     IOReturn ioReturnValue = kIOReturnSuccess;
     IOHIDDeviceInterface ** pphidDeviceInterface = NULL;
-    
+
     ioReturnValue = IOObjectGetClass(hidDevice, className);
     if (ioReturnValue != kIOReturnSuccess)
     {
@@ -813,12 +813,12 @@ IOHIDDeviceInterface** X52::create_deviceinterface(io_object_t hidDevice)
         return 0;
     }
     ioReturnValue = IOCreatePlugInInterfaceForService (hidDevice, kIOHIDDeviceUserClientTypeID,
-                                                       kIOCFPlugInInterfaceID, &plugInInterface, &score);
+                    kIOCFPlugInInterfaceID, &plugInInterface, &score);
     if (ioReturnValue == kIOReturnSuccess)
     {
         // Call a method of the intermediate plug-in to create the device interface
         plugInResult = (*plugInInterface)->QueryInterface (plugInInterface,
-                                                           CFUUIDGetUUIDBytes (kIOHIDDeviceInterfaceID), (void**)(void*)&pphidDeviceInterface);
+                       CFUUIDGetUUIDBytes (kIOHIDDeviceInterfaceID), (void**)(void*)&pphidDeviceInterface);
         if (plugInResult != S_OK)
             printf("Couldn’t query HID class device interface from plugInInterface\n");
         (*plugInInterface)->Release (plugInInterface);
@@ -842,23 +842,23 @@ void X52::event_interface(IOHIDDeviceInterface **hidDeviceInterface)
         /* depth: maximum number of elements
          in queue before oldest elements in
          queue begin to be lost*/
-        
-        
+
+
         //add elements to the queue
         for (int i = 0; i < curDevice.buttons; ++i)
             (*queue)->addElement(queue, buttonElements[i], 0);
-        
+
         CFRunLoopSourceRef tCFRunLoopSourceRef = NULL;
 
         result = (*queue)->createAsyncEventSource(queue, &tCFRunLoopSourceRef);
         if (kIOReturnSuccess != result)
             printf ("Failed to createAsyncEventSource, error: %ld.\n", result);
-        
+
         // if we have one now…
         if (NULL != tCFRunLoopSourceRef)
         {
             CFRunLoopRef tCFRunLoopRef = (CFRunLoopRef) GetCFRunLoopFromEventLoop(GetMainEventLoop());
-            
+
             // and it's not already attached to our runloop…
             if (!CFRunLoopContainsSource(tCFRunLoopRef, tCFRunLoopSourceRef, kCFRunLoopDefaultMode))
                 // then attach it now.
@@ -868,28 +868,28 @@ void X52::event_interface(IOHIDDeviceInterface **hidDeviceInterface)
         while (_isRunning)
         {
             AbsoluteTime zeroTime = {0,0};
-            while( (result = (*queue)->getNextEvent (queue, &event, zeroTime, 0)) != kIOReturnUnderrun)
+            while ( (result = (*queue)->getNextEvent (queue, &event, zeroTime, 0)) != kIOReturnUnderrun)
             {
                 if (result != kIOReturnSuccess)
                     printf ("queue getNextEvent result error: %lx\n", result);
                 else
                 {
-                   // printf ("queue: event:[0x%lX, 0x%lX] %ld\n", (unsigned long) event.elementCookie, buttonCookies[(int)event.elementCookie], event.value);
+                    // printf ("queue: event:[0x%lX, 0x%lX] %ld\n", (unsigned long) event.elementCookie, buttonCookies[(int)event.elementCookie], event.value);
                     dispatch_input(buttonCookies[(int)event.elementCookie],  event.value);
                 }
                 fflush (stdout);
             }
             CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.1f, true);
         }
-        
+
         //stop data delivery to queue
         result = (*queue)->stop (queue);
-        
+
         tCFRunLoopSourceRef = (*queue)->getAsyncEventSource(queue);
-        if (NULL != tCFRunLoopSourceRef)	// if so then…
+        if (NULL != tCFRunLoopSourceRef) // if so then…
         {
             CFRunLoopRef tCFRunLoopRef = (CFRunLoopRef) GetCFRunLoopFromEventLoop(GetMainEventLoop());
-            
+
             // if it's attached to our runloop…
             if (CFRunLoopContainsSource(tCFRunLoopRef, tCFRunLoopSourceRef, kCFRunLoopDefaultMode))
                 // then remove it
@@ -897,10 +897,10 @@ void X52::event_interface(IOHIDDeviceInterface **hidDeviceInterface)
             // now release it.
             CFRelease(tCFRunLoopSourceRef);
         }
-        
+
         result = (*queue)->dispose (queue);
         result = (*queue)->Release (queue);
-  		fflush (stdout);
+        fflush (stdout);
     }
 }
 
@@ -909,50 +909,51 @@ void X52::process_device(io_object_t hidDevice)
 {
     IOHIDDeviceInterface** pphidDeviceInterface = 0;
     IOReturn ioReturnValue = kIOReturnSuccess;
-    
+
     pphidDeviceInterface = create_deviceinterface(hidDevice);
     if (!pphidDeviceInterface)
         return;
-    
+
     if (*pphidDeviceInterface)
     {
         ioReturnValue = (*pphidDeviceInterface)->open(pphidDeviceInterface, 0);
-        
+
         event_interface(pphidDeviceInterface);
-        
+
         if (ioReturnValue == KERN_SUCCESS)
         {
             ioReturnValue = (*pphidDeviceInterface)->close(pphidDeviceInterface);
         }
         (*pphidDeviceInterface)->Release(pphidDeviceInterface);
     }
-    
+
     return;
 }
 
-int X52::mac_jsstart() {
+int X52::mac_jsstart()
+{
     mach_port_t masterPort = 0;
     io_iterator_t hidObjectIterator = 0;
     IOReturn ioReturnValue = kIOReturnSuccess;
     io_object_t hidDevice = 0;
-    
+
     ioReturnValue = IOMasterPort(bootstrap_port, &masterPort);
     if (ioReturnValue != kIOReturnSuccess)
     {
         printf("Couldn’t create a master I/O Kit Port.\n");
         return 1;
     }
-    
+
     hidObjectIterator = find_device(masterPort, kHIDPage_GenericDesktop, kHIDUsage_GD_Joystick);
     if (!hidObjectIterator)
     {
         printf("no joysticks found\n");
         return 1;
     }
-    
+
     while ((hidDevice = IOIteratorNext (hidObjectIterator)))
-	{
-		if (is_x52product(hidDevice) != OTHER)
+    {
+        if (is_x52product(hidDevice) != OTHER)
         {
             printf("Saitek X52 product found.\n");
             process_device(hidDevice);
@@ -963,14 +964,14 @@ int X52::mac_jsstart() {
             printf("Couldn’t release HID device.\n");
             return 1;
         }
-	}
-	IOObjectRelease (hidObjectIterator);
-    
+    }
+    IOObjectRelease (hidObjectIterator);
+
     fflush(stdout);
-    
+
     if (masterPort)
         mach_port_deallocate(mach_task_self (), masterPort);
-    
+
     return 0;
 }
 #endif

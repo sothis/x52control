@@ -138,25 +138,25 @@ class X52;
 */
 typedef struct _sx52device
 {
-	IOHIDDeviceInterface ** interface;
-    
-	char product[256];
-	long usage;
-	long usagePage;
-    
-	long axes;
-	long buttons;
-	long hats;
-	long elements;    
-    
-	int removed;
-	int uncentered;
+    IOHIDDeviceInterface ** interface;
+
+    char product[256];
+    long usage;
+    long usagePage;
+
+    long axes;
+    long buttons;
+    long hats;
+    long elements;
+
+    int removed;
+    int uncentered;
 } x52device;
 //typedef struct _sx52device x52device;
 
 typedef struct _element
 {
-	IOHIDElementCookie cookie;
+    IOHIDElementCookie cookie;
 } element;
 //typedef struct _element element;
 
@@ -190,7 +190,7 @@ private:
         X52PRO,
         YOKE
     };
-    
+
     static void* input_thread(void* arg);
     void process_input(void);
 #if LIN
@@ -212,7 +212,7 @@ private:
     void process_device(io_object_t hidDevice);
     int mac_jsstart();
 #endif
-     void datacycle_up(void);
+    void datacycle_up(void);
     void datacycle_down(void);
 
     void set_currentpage(int page);
