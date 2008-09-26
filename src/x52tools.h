@@ -20,13 +20,34 @@ private:
 };
 
 class x52object_t
-    {};
+{
+public:
+    virtual ~x52object_t(void){};
+    virtual const std::string& name(void)=0;
+    virtual bool refresh(void)=0;
+    virtual void mark_dirty(void)=0;
+    virtual operator int(void)=0;
+    virtual operator float(void)=0;
+    virtual operator double(void)=0;
+    virtual operator const std::string&(void)=0;
+    virtual operator const char*(void)=0;
+};
+
+class x52provider_t
+{
+public:
+    virtual ~x52provider_t(void){};
+private:
+private:
+    virtual void refresh_datasources(void)=0;
+    virtual void refresh_listeners(x52object_t* updated_source)=0;
+};
 
 class x52listener_t
 {
 public:
+    virtual ~x52listener_t(void){};
     virtual const std::string& name(void)=0;
-private:
     virtual bool has_object(x52object_t* obj)=0;
     virtual bool refresh(x52object_t* obj)=0;
     virtual void final_refresh(void)=0;

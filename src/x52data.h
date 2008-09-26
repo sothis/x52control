@@ -9,7 +9,6 @@ class x52mfdpage_t;
 
 class x52datasource_t : public x52object_t, public x52tools_t
 {
-    friend class x52data_t;
 public:
     x52datasource_t(const char* ref);
     ~x52datasource_t(void);
@@ -22,9 +21,8 @@ public:
     operator double(void);
     operator const std::string&(void);
     operator const char*(void);
-private:
     bool refresh(void);
-
+private:
     std::string a_name;
     void*  a_ref;
     int   a_reftype;
@@ -36,16 +34,16 @@ private:
     std::string a_dstring;
 };
 
-class x52data_t : public x52tools_t
+class x52data_t : public x52provider_t, public x52tools_t
 {
 public:
     x52data_t(void);
     ~x52data_t(void);
 
-    void add_listener(x52mfdpage_t* listener);
-    void remove_listener(x52mfdpage_t* listener);
-    x52datasource_t* add_datasource(const char* ref);
-    void remove_datasource(x52datasource_t* source);
+    void add_listener(x52listener_t* listener);
+    void remove_listener(x52listener_t* listener);
+    x52object_t* add_datasource(const char* ref);
+    void remove_datasource(x52object_t* source);
     void remove_datasource(const char* ref);
     void connect(float interval);
     void disconnect();
@@ -54,10 +52,10 @@ public:
 private:
     static float update(float elapsed_lastcall, float elapsed_lastloop, int n_loop, void* arg);
     void refresh_datasources(void);
-    void refresh_listeners(x52datasource_t* updated_source);
-    std::set<x52mfdpage_t*> a_listeners;
-    std::set<x52datasource_t*> a_datasources;
-    std::set<x52mfdpage_t*> a_wantsupdate;
+    void refresh_listeners(x52object_t* updated_source);
+    std::set<x52listener_t*> a_listeners;
+    std::set<x52object_t*> a_datasources;
+    std::set<x52listener_t*> a_wantsupdate;
     float a_interval;
 };
 

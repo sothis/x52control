@@ -62,7 +62,7 @@ void x52mfdpage_t::set_active(bool active)
 {
     a_visible = active;
     if (active)
-        for (map<int, x52datasource_t*>::iterator it = a_datasources.begin(); it != a_datasources.end(); ++it)
+        for (map<int, x52object_t*>::iterator it = a_datasources.begin(); it != a_datasources.end(); ++it)
         {
             (*it).second->mark_dirty();
         }
@@ -74,7 +74,7 @@ void x52mfdpage_t::set_datasources(std::map<int, std::string>* sources)
     a_datasources.clear();
     for (map<int, string>::iterator it = sources->begin(); it != sources->end(); ++it)
     {
-        x52datasource_t* src;
+        x52object_t* src;
         src = a_dataconnection->add_datasource((*it).second.c_str());
         if (src) a_datasources[(*it).first] = src;
     }
@@ -82,7 +82,7 @@ void x52mfdpage_t::set_datasources(std::map<int, std::string>* sources)
 
 bool x52mfdpage_t::has_object(x52object_t* source)
 {
-    for (map<int, x52datasource_t*>::iterator it = a_datasources.begin(); it != a_datasources.end(); ++it)
+    for (map<int, x52object_t*>::iterator it = a_datasources.begin(); it != a_datasources.end(); ++it)
     {
         if ((*it).second == source)
             return true;
@@ -107,7 +107,7 @@ void x52mfdpage_t::final_refresh(void)
     int i;
     float f;
 
-    for (map<int, x52datasource_t*>::iterator it = a_datasources.begin(); it != a_datasources.end(); ++it)
+    for (map<int, x52object_t*>::iterator it = a_datasources.begin(); it != a_datasources.end(); ++it)
     {
         if ((p = t2.find('%')) != std::string::npos)
         {

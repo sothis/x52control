@@ -12,7 +12,7 @@ x52data_t::x52data_t(void)
 
 x52data_t::~x52data_t(void)
 {
-    for (set<x52datasource_t*>::iterator it = a_datasources.begin(); it != a_datasources.end(); ++it)
+    for (set<x52object_t*>::iterator it = a_datasources.begin(); it != a_datasources.end(); ++it)
     {
         delete *it;
     }
@@ -40,7 +40,7 @@ void x52data_t::disconnect()
     debug_out(info, "deactivating data connection (self: %p)", this);
 }
 
-void x52data_t::add_listener(x52mfdpage_t* listener)
+void x52data_t::add_listener(x52listener_t* listener)
 {
     if (!listener) return;
     if (a_listeners.insert(listener).second)
@@ -49,7 +49,7 @@ void x52data_t::add_listener(x52mfdpage_t* listener)
     }
 }
 
-void x52data_t::remove_listener(x52mfdpage_t* listener)
+void x52data_t::remove_listener(x52listener_t* listener)
 {
     if (!listener) return;
     if (a_listeners.erase(listener))
@@ -60,7 +60,7 @@ void x52data_t::remove_listener(x52mfdpage_t* listener)
 
 // TODO: avoid adding redundant sources, currently the address is uses for
 // identification, which is always unique
-x52datasource_t* x52data_t::add_datasource(const char* ref)
+x52object_t* x52data_t::add_datasource(const char* ref)
 {
     if (!ref) return 0;
     x52datasource_t* source = 0;
@@ -78,7 +78,7 @@ x52datasource_t* x52data_t::add_datasource(const char* ref)
     return source;
 }
 
-void x52data_t::remove_datasource(x52datasource_t* source)
+void x52data_t::remove_datasource(x52object_t* source)
 {
     if (!source) return;
     if (a_datasources.erase(source))
@@ -91,7 +91,7 @@ void x52data_t::remove_datasource(x52datasource_t* source)
 void x52data_t::remove_datasource(const char* ref)
 {
     if (!ref) return;
-    for (set<x52datasource_t*>::iterator it = a_datasources.begin(); it != a_datasources.end(); ++it)
+    for (set<x52object_t*>::iterator it = a_datasources.begin(); it != a_datasources.end(); ++it)
     {
         if ((*it)->name() == ref)
             remove_datasource(*it);
@@ -104,7 +104,7 @@ void x52data_t::remove_datasource(const char* ref)
 void x52data_t::refresh_datasources(void)
 {
     a_wantsupdate.clear();
-    for (set<x52datasource_t*>::iterator it = a_datasources.begin(); it != a_datasources.end(); ++it)
+    for (set<x52object_t*>::iterator it = a_datasources.begin(); it != a_datasources.end(); ++it)
     {
         if ((*it)->refresh())
         {
@@ -112,16 +112,16 @@ void x52data_t::refresh_datasources(void)
             refresh_listeners(*it);
         }
     }
-    for (set<x52mfdpage_t*>::iterator it = a_wantsupdate.begin(); it != a_wantsupdate.end(); ++it)
+    for (set<x52listener_t*>::iterator it = a_wantsupdate.begin(); it != a_wantsupdate.end(); ++it)
     {
         (*it)->final_refresh();
     }
 }
 
-void x52data_t::refresh_listeners(x52datasource_t* updated_source)
+void x52data_t::refresh_listeners(x52object_t* updated_source)
 {
     int not_orphaned = 0;
-    for (set<x52mfdpage_t*>::iterator it = a_listeners.begin(); it != a_listeners.end(); ++it)
+    for (set<x52listener_t*>::iterator it = a_listeners.begin(); it != a_listeners.end(); ++it)
     {
         if ((*it)->has_object(updated_source))
         {
