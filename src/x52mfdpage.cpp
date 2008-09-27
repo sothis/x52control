@@ -42,7 +42,7 @@ x52mfdpage_t::x52mfdpage_t(const char* name, x52out_t* outputdevice, x52data_t* 
         sources[1] = "sim/cockpit/radios/adf2_freq_hz";
         sources[2] = "sim/cockpit/radios/adf1_stdby_freq_hz";
         sources[3] = "sim/cockpit/radios/adf2_stdby_freq_hz";
-        a_template.assign(" Adf1      Adf2\n%%03d Hz Ac %%03d Hz\n%%03d Hz Ac %%03d Hz");
+        a_template.assign(" Adf1      Adf2\n%%03d Hz Ac %%03d Hz\n%%03d Hz Sb %%03d Hz");
         set_datasources(&sources);
     }
 }

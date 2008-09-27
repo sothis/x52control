@@ -30,6 +30,11 @@ void x52in_t::add_page(x52mfdpage_t* page)
         a_currentpage = page;
         debug_out(info, "added page to inputhandler: {%s} (self: %p)", page->name().c_str(), page);
     }
+    for (set<x52mfdpage_t*>::iterator it = a_pages.begin(); it != a_pages.end(); ++it)
+    {
+        (*it)->set_active(false);
+    }
+    a_currentpage->set_active(true);
 }
 
 void x52in_t::handle_pagecycle(void)
