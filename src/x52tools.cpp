@@ -2,7 +2,7 @@
 #include <stdarg.h>
 #include "x52tools.h"
 
-x52tools_t::x52tools_t(void) : verbose(true)
+x52tools_t::x52tools_t(void) : verbose(false)
 {
 }
 

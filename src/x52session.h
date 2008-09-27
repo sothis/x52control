@@ -6,6 +6,7 @@
 class x52out_t;
 class x52in_t;
 class x52data_t;
+class x52time_t;
 
 class x52session_t : public x52tools_t
 {
@@ -19,6 +20,7 @@ private:
     x52out_t* a_joystickout;
     x52in_t* a_joystickin;
     x52data_t* a_dataconnection;
+    x52time_t* a_x52time;
 };
 
 #endif /* X52SESSION_H */

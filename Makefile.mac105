@@ -19,6 +19,7 @@ OBJ_PLUGIN	=	src/main.o \
 				src/x52out.o \
 				src/x52in.o \
 				src/x52mfdpage.o \
+				src/x52time.o \
 				src/usb/usb.o \
 				src/usb/darwin.o \
 				src/usb/descriptors.o \

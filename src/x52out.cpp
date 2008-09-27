@@ -88,6 +88,8 @@ x52out_t::~x52out_t(void)
         print("");
         break;
     }
+    time(true, 0, 0);
+    date(0, 0, 0);
     usb_close(a_usbhdl);
     debug_out(info, "joystick disconnected");
 }
@@ -175,6 +177,31 @@ void x52out_t::clear(void)
     }
 }
 
+void x52out_t::time(bool h24, char hour, char minute)
+{
+    try
+    {
+        settime(h24, hour, minute);
+    }
+    catch (const char* reason)
+    {
+        debug_out(err, "%s", reason);
+    }
+}
+
+void x52out_t::date(int year, int month, int day)
+{
+    if (product == yoke_device) return;
+    try
+    {
+        setdate(year, month, day);
+    }
+    catch (const char* reason)
+    {
+        debug_out(err, "%s", reason);
+    }
+}
+
 
 /* private members */
 
@@ -217,4 +244,26 @@ void x52out_t::cleartext(int line)
                           0x00, line_clearctl[line], 0, 0, 100);
     if (res < 0)
         throw "could not clear textline";
+}
+
+void x52out_t::settime(int h24, int hour, int minute)
+{
+    int res = 0;
+    res = usb_control_msg(a_usbhdl, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, 0x91,
+                          minute | (hour<<8) | (h24?0x8000:0), 0xC0, 0, 0, 100);
+    if (res < 0)
+        throw "could not set time";
+}
+
+void x52out_t::setdate(int year, int month, int day)
+{
+    int res = 0;
+    res = usb_control_msg(a_usbhdl, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, 0x91,
+                          day | (month<<8), 0xC4, 0, 0, 100);
+    if (res < 0)
+        throw "could not set day and month";
+    res = usb_control_msg(a_usbhdl, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, 0x91,
+                          year, 0xC8, 0, 0, 100);
+    if (res < 0)
+        throw "could not set year";
 }

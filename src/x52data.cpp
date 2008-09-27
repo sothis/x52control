@@ -286,7 +286,17 @@ bool x52datasource_t::refresh(void)
         }
         else return false;
     case xplmType_Float:
-        if (((dfloat = XPLMGetDataf(a_ref)) != a_dfloat) || a_isdirty)
+        if (a_name == "sim/time/local_time_sec" || a_name == "sim/time/zulu_time_sec")
+        {
+            if (((dint = XPLMGetDataf(a_ref)) != (int)a_dfloat) || a_isdirty)
+            {
+                a_dfloat = dint;
+                a_isdirty = false;
+                return (a_newdata = true);
+            }
+            else return false;
+        }
+        else if (((dfloat = XPLMGetDataf(a_ref)) != a_dfloat) || a_isdirty)
         {
             a_dfloat = dfloat;
             a_isdirty = false;
