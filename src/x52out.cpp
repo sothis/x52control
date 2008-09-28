@@ -245,7 +245,7 @@ void x52out_t::settext(int line, const char *text, int length)
         unsigned short charpair;
         if (length == 1) charpair = (0 << 8) + *text;
         else charpair = *(unsigned short*) text;
-        charpair = bswap_constant_16(charpair);
+        charpair = __bswap_constant_16(charpair);
         res = usb_control_msg(a_usbhdl, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, 0x91,
                               charpair, line_writectl[line], 0, 0, 100);
         if (res < 0)
