@@ -15,15 +15,15 @@ extern const char* version;
 ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
 
 # define _SWAB16(x) \
-(__extension__							      \
-({ register unsigned short int __v, __x = (x);			      \
-if (__builtin_constant_p (__x))				      \
-__v = __bswap_constant_16 (__x);				      \
-else								      \
-__asm__ ("rorw $8, %w0"					      \
-: "=r" (__v)					      \
-: "0" (__x)						      \
-: "cc");						      \
+(__extension__             \
+({ register unsigned short int __v, __x = (x);         \
+if (__builtin_constant_p (__x))          \
+__v = __bswap_constant_16 (__x);          \
+else              \
+__asm__ ("rorw $8, %w0"           \
+: "=r" (__v)           \
+: "0" (__x)            \
+: "cc");            \
 __v; }))
 
 #else ifdef __i386__
@@ -270,7 +270,7 @@ void x52out_t::cleartext(int line)
 void x52out_t::settime(int h24, int hour, int minute)
 {
     int res = 0;
-    
+
     unsigned short timedata = minute | (hour<<8) | (h24?0x8000:0);
     res = usb_control_msg(a_usbhdl, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, 0x91,
                           timedata, 0xC0, 0, 0, 100);
@@ -281,7 +281,7 @@ void x52out_t::settime(int h24, int hour, int minute)
 void x52out_t::setdate(int year, int month, int day)
 {
     int res = 0;
-    
+
     unsigned short datedata = day | (month<<8);
     unsigned short yeardata = year;
     res = usb_control_msg(a_usbhdl, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, 0x91,
