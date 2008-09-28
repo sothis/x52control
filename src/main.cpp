@@ -3,7 +3,7 @@
 #include "XPLM/XPLMDefs.h"
 #include "x52session.h"
 
-const char* version = "0.3.0";
+const char* version = "0.3.1";
 
 #if IBM
 #include <windows.h>

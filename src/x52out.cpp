@@ -10,6 +10,26 @@ extern const char* version;
 #define STANDARD_MSG_PRO " Saitek X52 Pro\n     Flight\n Control System"
 #define WELCOME_MSG   "   x52control\n \n      ver %s", version
 
+#ifdef __ppc__
+#define __bswap_constant_16(x) \
+((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
+
+# define _SWAB16(x) \
+(__extension__							      \
+({ register unsigned short int __v, __x = (x);			      \
+if (__builtin_constant_p (__x))				      \
+__v = __bswap_constant_16 (__x);				      \
+else								      \
+__asm__ ("rorw $8, %w0"					      \
+: "=r" (__v)					      \
+: "0" (__x)						      \
+: "cc");						      \
+__v; }))
+
+#else ifdef __i386__
+#define _SWAB16(val) val
+#endif
+
 enum devices_e
 {
     x52_standard_device  = 0x0255,
@@ -226,6 +246,7 @@ void x52out_t::settext(int line, const char *text, int length)
         unsigned short charpair;
         if (length == 1) charpair = (0 << 8) + *text;
         else charpair = *(unsigned short*) text;
+        _SWAB16(charpair);
         res = usb_control_msg(a_usbhdl, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, 0x91,
                               charpair, line_writectl[line], 0, 0, 100);
         if (res < 0)
@@ -249,8 +270,10 @@ void x52out_t::cleartext(int line)
 void x52out_t::settime(int h24, int hour, int minute)
 {
     int res = 0;
+    
+    unsigned short timedata = minute | (hour<<8) | (h24?0x8000:0);
     res = usb_control_msg(a_usbhdl, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, 0x91,
-                          minute | (hour<<8) | (h24?0x8000:0), 0xC0, 0, 0, 100);
+                          timedata, 0xC0, 0, 0, 100);
     if (res < 0)
         throw "could not set time";
 }
@@ -258,12 +281,15 @@ void x52out_t::settime(int h24, int hour, int minute)
 void x52out_t::setdate(int year, int month, int day)
 {
     int res = 0;
+    
+    unsigned short datedata = day | (month<<8);
+    unsigned short yeardata = year;
     res = usb_control_msg(a_usbhdl, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, 0x91,
-                          day | (month<<8), 0xC4, 0, 0, 100);
+                          datedata, 0xC4, 0, 0, 100);
     if (res < 0)
         throw "could not set day and month";
     res = usb_control_msg(a_usbhdl, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, 0x91,
-                          year, 0xC8, 0, 0, 100);
+                          yeardata, 0xC8, 0, 0, 100);
     if (res < 0)
         throw "could not set year";
 }
