@@ -10,25 +10,24 @@ extern const char* version;
 #define STANDARD_MSG_PRO " Saitek X52 Pro\n     Flight\n Control System"
 #define WELCOME_MSG   "   x52control\n \n      ver %s", version
 
-#ifdef __ppc__
-#define __bswap_constant_16(x) \
-((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
+#if defined (__ppc__)
+    #define __bswap_constant_16(x)                  \
+    ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
 
-# define _SWAB16(x) \
-(__extension__             \
-({ register unsigned short int __v, __x = (x);         \
-if (__builtin_constant_p (__x))          \
-__v = __bswap_constant_16 (__x);          \
-else              \
-__asm__ ("rorw $8, %w0"           \
-: "=r" (__v)           \
-: "0" (__x)            \
-: "cc");            \
-__v; }))
-
-#else ifdef __i386__
-#define _SWAB16(val) val
-#endif
+    #define _SWAB16(x)                             \
+    (__extension__                                  \
+    ({ register unsigned short int __v, __x = (x);  \
+    if (__builtin_constant_p (__x))                 \
+        __v = __bswap_constant_16 (__x);                \
+    else                                            \
+        __asm__ ("rorw $8, %w0"                         \
+                : "=r" (__v)                                    \
+                : "0" (__x)                                     \
+                : "cc");                                        \
+                __v; }))
+#elif defined (__i386__)
+    #define _SWAB16(val)
+#endif /* __ppc__ */
 
 enum devices_e
 {
