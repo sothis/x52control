@@ -26,7 +26,7 @@ extern const char* version;
                 : "cc");                            \
                 __v; }))
 #elif defined (__i386__)
-    #define _SWAB16(val) val
+    #define __bswap_constant_16(x) x
 #endif /* __ppc__ */
 
 enum devices_e
