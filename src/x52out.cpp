@@ -11,10 +11,10 @@ extern const char* version;
 #define WELCOME_MSG   "   x52control\n \n      ver %s", version
 
 #if defined (__ppc__)
-    #define __bswap_constant_16(x)                  \
+#define __bswap_constant_16(x)                   \
     ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
 
-    #define _SWAB16(x)                              \
+#define _SWAB16(x)                               \
     (__extension__                                  \
     ({ register unsigned short int __v, __x = (x);  \
     if (__builtin_constant_p (__x))                 \
@@ -26,22 +26,23 @@ extern const char* version;
                 : "cc");                            \
                 __v; }))
 #elif defined (__i386__)
-    #define __bswap_constant_16(x) x
+#define __bswap_constant_16(x) x
+#define _SWAB16(x) x
 #endif /* __ppc__ */
 
 enum devices_e
 {
     x52_standard_device  = 0x0255,
     x52_standard_device2 = 0x075C,
-    x52_pro_device   = 0x0762,
-    yoke_device    = 0x0BAC
+    x52_pro_device       = 0x0762,
+    yoke_device          = 0x0BAC
 };
 
 x52out_t::x52out_t(void)
 {
-    usb_bus* bus    = 0;
-    struct usb_device* joydev = 0;
-    struct usb_device* dev  = 0;
+    usb_bus* bus               = 0;
+    struct usb_device* joydev  = 0;
+    struct usb_device* dev     = 0;
     usb_device_descriptor* dsc = 0;
 
     debug_out(info, "searching for joystick");
