@@ -14,19 +14,19 @@ extern const char* version;
     #define __bswap_constant_16(x)                  \
     ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
 
-    #define _SWAB16(x)                             \
+    #define _SWAB16(x)                              \
     (__extension__                                  \
     ({ register unsigned short int __v, __x = (x);  \
     if (__builtin_constant_p (__x))                 \
-        __v = __bswap_constant_16 (__x);                \
+        __v = __bswap_constant_16 (__x);            \
     else                                            \
-        __asm__ ("rorw $8, %w0"                         \
-                : "=r" (__v)                                    \
-                : "0" (__x)                                     \
-                : "cc");                                        \
+        __asm__ ("rorw $8, %w0"                     \
+                : "=r" (__v)                        \
+                : "0" (__x)                         \
+                : "cc");                            \
                 __v; }))
 #elif defined (__i386__)
-    #define _SWAB16(val)
+    #define _SWAB16(val) val
 #endif /* __ppc__ */
 
 enum devices_e
@@ -245,7 +245,7 @@ void x52out_t::settext(int line, const char *text, int length)
         unsigned short charpair;
         if (length == 1) charpair = (0 << 8) + *text;
         else charpair = *(unsigned short*) text;
-        _SWAB16(charpair);
+        charpair = bswap_constant_16(charpair);
         res = usb_control_msg(a_usbhdl, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, 0x91,
                               charpair, line_writectl[line], 0, 0, 100);
         if (res < 0)
