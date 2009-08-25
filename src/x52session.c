@@ -1,7 +1,6 @@
 #include "x52session.h"
 #include "x52interface.h"
 
-
 static inline void _x52s_init(void)
 {
 	/* set led and mfd brightness to maximum */
@@ -24,6 +23,7 @@ static inline void _x52s_init(void)
 	/* commit changes */
 	x52i_commit();
 }
+
 
 /* callbacks */
 

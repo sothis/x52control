@@ -11,7 +11,7 @@ SOURCES	+= ./src/usb/descriptors.c
 
 
 INCLUDE := -I./include -I./src
-DEFINES := -DLIN -DLIL -DPIC -DXPLM200
+DEFINES :=
 
 
 ifndef CONF
@@ -20,13 +20,10 @@ endif
 ifeq ($(CONF), debug)
 	DEBUG	:= Yes
 endif
-ifeq ($(CONF), debugo)
-	DEBUGO	:= Yes
-endif
 ifeq ($(CONF), release)
 	RELEASE	:= Yes
 endif
-ifeq ($(CONF), releases)
+ifeq ($(CONF), release_s)
 	RELEASE_STATIC	:= Yes
 endif
 OUTDIR		:= build
@@ -36,22 +33,18 @@ LD	:= gcc
 CC	:= gcc
 
 ifdef DEBUG
-CFLAGS	:= -m32 -O0 -g -std=c99 -Wall -fPIC -pipe -fvisibility=hidden
-LDFLAGS	:= -m32 -shared
-endif
-ifdef DEBUGO
-CFLAGS	:= -m32 -O3 -g -fstrict-aliasing -std=c99 -fPIC -fvisibility=hidden
-CFLAGS	+= -pipe -Wall
-LDFLAGS	:= -m32 -shared -Wl,-O1
+CFLAGS	:= -m32 -O3 -fstrict-aliasing -std=c99 -Wall -fvisibility=hidden
+CFLAGS	+= -pipe -Wall -fPIC -g
+LDFLAGS	:= -m32 -shared -static-libgcc -Wl,-O1
 endif
 ifdef RELEASE
-CFLAGS	:= -m32 -O3 -fomit-frame-pointer -fstrict-aliasing -std=c99
-CFLAGS	+= -fPIC -pipe -fvisibility=hidden
-LDFLAGS	:= -m32 -shared -Wl,-O1,--strip-all
+CFLAGS	:= -m32 -O3 -fstrict-aliasing -std=c99 -Wall -fvisibility=hidden
+CFLAGS	+= -pipe -Wall -fPIC -fomit-frame-pointer
+LDFLAGS	:= -m32 -shared -static-libgcc -Wl,-O1,--strip-all
 endif
 ifdef RELEASE_STATIC
-CFLAGS	:= -m32 -O3 -fomit-frame-pointer -fstrict-aliasing -std=c99
-CFLAGS	+= -fPIC -pipe -fvisibility=hidden
+CFLAGS	:= -m32 -O3 -fstrict-aliasing -std=c99 -Wall -fvisibility=hidden
+CFLAGS	+= -pipe -Wall -fPIC -fomit-frame-pointer
 LDFLAGS	:= -m32 -shared -static-libgcc -Wl,-Bstatic,-O1,--strip-all
 endif
 
@@ -66,32 +59,30 @@ print_memc	:= echo [ MEMCHECK ]
 print_prf	:= echo [ PROFILE  ]
 print_error	:= (echo [ FAILED ] && false)
 
-.PHONY: all clean debug debug-opt release release-static x52control test
-.PHONY: memcheck
+.PHONY: all clean debug release release-static x52control test
+.PHONY: memcheck profile
 
-all: release
+all: debug release release-static
 
 debug:
 	@$(MAKE) CONF=debug -s -C . x52control test
-debug-opt:
-	@$(MAKE) CONF=debugo -s -C . x52control test
 release:
-	@$(MAKE) CONF=release -s -C . x52control
+	@$(MAKE) CONF=release -s -C . x52control test
 release-static:
-	@$(MAKE) CONF=releases -s -C . x52control
+	@$(MAKE) CONF=release_s -s -C . x52control test
 
-memcheck: debug-opt
+memcheck: debug
 # valgrind >= 3.5 supports non-zero exit code on leak occurances
 	@$(print_memc)
 	@valgrind --leak-check=full --error-exitcode=1 --show-reachable=yes \
-	$(OUTDIR)/debugo/test 2> $(OUTDIR)/debugo/test.mem 1> /dev/null || \
+	$(OUTDIR)/debug/test 2> $(OUTDIR)/debug/test.mem 1> /dev/null || \
 	$(print_error)
 
-profile: debug-opt
+profile: debug
 	@$(print_prf)
 	@valgrind --tool=callgrind --error-exitcode=1 \
-	--callgrind-out-file=$(OUTDIR)/debugo/test.cgr $(OUTDIR)/debugo/test \
-	2> $(OUTDIR)/debugo/test.prf 1> /dev/null || $(print_error)
+	--callgrind-out-file=$(OUTDIR)/debug/test.cgr $(OUTDIR)/debug/test \
+	2> $(OUTDIR)/debug/test.prf 1> /dev/null || $(print_error)
 
 x52control: $(BUILDDIR)/lin.xpl
 test:  $(BUILDDIR)/test
