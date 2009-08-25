@@ -18,11 +18,11 @@
 #include "linux.h"
 #include "usbi.h"
 
-static char usb_path[PATH_MAX + 1] = "";
+static char usb_path[4096 + 1] = "";
 
 static int device_open(struct usb_device *dev)
 {
-    char filename[PATH_MAX + 1];
+    char filename[4096 + 1];
     int fd;
 
     snprintf(filename, sizeof(filename) - 1, "%s/%s/%s",
@@ -380,9 +380,9 @@ int usb_os_find_devices(struct usb_bus *bus, struct usb_device **devices)
     struct usb_device *fdev = NULL;
     DIR *dir;
     struct dirent *entry;
-    char dirpath[PATH_MAX + 1];
+    char dirpath[4096 + 1] = {0};
 
-    snprintf(dirpath, PATH_MAX, "%s/%s", usb_path, bus->dirname);
+    snprintf(dirpath, 4096, "%s/%s", usb_path, bus->dirname);
 
     dir = opendir(dirpath);
     if (!dir)
@@ -392,7 +392,7 @@ int usb_os_find_devices(struct usb_bus *bus, struct usb_device **devices)
     while ((entry = readdir(dir)) != NULL)
     {
         unsigned char device_desc[DEVICE_DESC_LENGTH];
-        char filename[PATH_MAX + 1];
+        char filename[4096 + 1];
         struct usb_device *dev;
         struct usb_connectinfo connectinfo;
         int i, fd, ret;
