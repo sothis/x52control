@@ -182,8 +182,8 @@ x52i_reset_state(void);
 
 /**
 ** resets the whole internal state and the device.
-** if shutdown is 1, then x52i_reset() will close the x52device but won't
-** reopen it again, and as such releasing all allocated resources. must be
+** if shutdown is 1, then x52i_reset_device() will close the x52 device but
+** won't reopen it again, and as such releasing all allocated resources. must be
 ** called once at least before attempting to commit changes with x52i_commit().
 ** returns 0 on success, -1 if no x52 device was found.
 **/
