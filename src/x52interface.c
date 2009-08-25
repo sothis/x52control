@@ -93,7 +93,7 @@ void x52i_set_brightness(enum x52i_brightness dev, uint8_t val)
 	_set(x52i_bright.dirty, (1 << dev));
 }
 
-void x52i_set_leds(enum x52i_led led, enum x52i_status status)
+void x52i_set_led(enum x52i_led led, enum x52i_status status)
 {
 	switch (status) {
 	case x52i_status_on:
@@ -106,7 +106,13 @@ void x52i_set_leds(enum x52i_led led, enum x52i_status status)
 	_set(x52i_led.dirty, (1 << led));
 }
 
-void x52i_set_leds_all(enum x52i_status status)
+void x52i_toggle_led(enum x52i_led led)
+{
+	_get(x52i_led.state, (1 << led))?x52i_set_led(led, x52i_status_off):
+	x52i_set_led(led, x52i_status_on);
+}
+
+void x52i_set_led_all(enum x52i_status status)
 {
 	switch (status) {
 	case x52i_status_on:
@@ -119,45 +125,45 @@ void x52i_set_leds_all(enum x52i_status status)
 	_setall(x52i_led.dirty);
 }
 
-void x52i_set_leds_color(enum x52i_cled l, enum x52i_color c,
+void x52i_set_led_color(enum x52i_cled l, enum x52i_color c,
 enum x52i_status status)
 {
 	switch (c) {
-		case x52i_color_red:
-			if (status == x52i_status_on) {
-				x52i_set_leds(l, x52i_status_on);
-				x52i_set_leds(l+1, x52i_status_off);
-			}
-			if (status == x52i_status_off) {
-				x52i_set_leds(l, x52i_status_off);
-			}
-			break;
-		case x52i_color_green:
-			if (status == x52i_status_on) {
-				x52i_set_leds(l, x52i_status_off);
-				x52i_set_leds(l+1, x52i_status_on);
-			}
-			if (status == x52i_status_off) {
-				x52i_set_leds(l+1, x52i_status_off);
-			}
-			break;
-		case x52i_color_amber:
-			if (status == x52i_status_on) {
-				x52i_set_leds(l, x52i_status_on);
-				x52i_set_leds(l+1, x52i_status_on);
-			}
-			if (status == x52i_status_off) {
-				x52i_set_leds(l, x52i_status_off);
-				x52i_set_leds(l+1, x52i_status_off);
-			}
-			break;
+	case x52i_color_red:
+		if (status == x52i_status_on) {
+			x52i_set_led(l, x52i_status_on);
+			x52i_set_led(l+1, x52i_status_off);
+		}
+		if (status == x52i_status_off) {
+			x52i_set_led(l, x52i_status_off);
+		}
+		break;
+	case x52i_color_green:
+		if (status == x52i_status_on) {
+			x52i_set_led(l, x52i_status_off);
+			x52i_set_led(l+1, x52i_status_on);
+		}
+		if (status == x52i_status_off) {
+			x52i_set_led(l+1, x52i_status_off);
+		}
+		break;
+	case x52i_color_amber:
+		if (status == x52i_status_on) {
+			x52i_set_led(l, x52i_status_on);
+			x52i_set_led(l+1, x52i_status_on);
+		}
+		if (status == x52i_status_off) {
+			x52i_set_led(l, x52i_status_off);
+			x52i_set_led(l+1, x52i_status_off);
+		}
+		break;
 	}
 }
 
-void x52i_set_leds_color_all(enum x52i_color c, enum x52i_status status)
+void x52i_set_led_color_all(enum x52i_color c, enum x52i_status status)
 {
 	for (uint8_t l=x52i_cled_A; l<=x52i_cled_i; l+=2) {
-		x52i_set_leds_color(l, c, status);
+		x52i_set_led_color(l, c, status);
 	}
 }
 
@@ -224,7 +230,7 @@ static inline void _x52i_commit_text(void)
 	}
 }
 
-static inline void _x52i_commit_leds(void)
+static inline void _x52i_commit_led(void)
 {
 	for (uint8_t led = x52i_led_missile; led <= x52i_led_throttle; ++led) {
 		if (_get(x52i_led.dirty, (1 << led))) {
@@ -290,7 +296,7 @@ static inline void _x52i_commit_brightness(void)
 void x52i_commit(void)
 {
 	_x52i_commit_text();
-	_x52i_commit_leds();
+	_x52i_commit_led();
 	_x52i_commit_time();
 	_x52i_commit_zone();
 	_x52i_commit_date();
@@ -326,10 +332,10 @@ x52i_enable()
 	x52i_set_brightness(x52i_brightness_mfd, 127);
 	x52i_set_brightness(x52i_brightness_led, 127);
 	/* turn on all green and additional led's */
-	x52i_set_leds_all(x52i_status_off);
-	x52i_set_leds(x52i_led_missile, x52i_status_on);
-	x52i_set_leds(x52i_led_throttle, x52i_status_on);
-	x52i_set_leds_color_all(x52i_color_green, x52i_status_on);
+	x52i_set_led_all(x52i_status_off);
+	x52i_set_led(x52i_led_missile, x52i_status_on);
+	x52i_set_led(x52i_led_throttle, x52i_status_on);
+	x52i_set_led_color_all(x52i_color_green, x52i_status_on);
 	/* clear all text */
 	x52i_set_text(x52i_line_0, 0);
 	x52i_set_text(x52i_line_1, 0);
@@ -352,7 +358,7 @@ x52i_disable()
 	x52i_reset();
 	x52i_set_brightness(x52i_brightness_mfd, 0);
 	x52i_set_brightness(x52i_brightness_led, 0);
-	x52i_set_leds_all(x52i_status_off);
+	x52i_set_led_all(x52i_status_off);
 	x52i_set_text(x52i_line_0, 0);
 	x52i_set_text(x52i_line_1, 0);
 	x52i_set_text(x52i_line_2, 0);

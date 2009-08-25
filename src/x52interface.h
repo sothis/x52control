@@ -106,13 +106,19 @@ x52i_set_brightness(enum x52i_brightness dev, uint8_t val);
 ** turn a specific led on or off.
 **/
 extern void
-x52i_set_leds(enum x52i_led led, enum x52i_status status);
+x52i_set_led(enum x52i_led led, enum x52i_status status);
 
 /**
 ** set all led's on or off.
 **/
 extern void
-x52i_set_leds_all(enum x52i_status status);
+x52i_set_led_all(enum x52i_status status);
+
+/**
+** toggle a led to either on or off, depending on it's previous state.
+**/
+extern void
+x52i_toggle_led(enum x52i_led led);
 
 /**
 ** toogle a specific led-group, determined by their color, on or off.
@@ -122,14 +128,14 @@ x52i_set_leds_all(enum x52i_status status);
 ** them.
 **/
 extern void
-x52i_set_leds_color(enum x52i_cled l, enum x52i_color c,
+x52i_set_led_color(enum x52i_cled l, enum x52i_color c,
 enum x52i_status status);
 
 /**
 ** toogle all led-groups, determined by their color, on or off.
 **/
 extern void
-x52i_set_leds_color_all(enum x52i_color c, enum x52i_status status);
+x52i_set_led_color_all(enum x52i_color c, enum x52i_status status);
 
 /**
 ** sets the text of a specific line on the multifunction display.
