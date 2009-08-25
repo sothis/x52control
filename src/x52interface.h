@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-struct x52d_t;
-
 enum x52i_cled
 {
 	x52i_cled_A		= 0x01,
@@ -80,15 +78,6 @@ enum x52i_brightness
 	x52i_brightness_mfd	= 0,
 	x52i_brightness_led	= 1,
 };
-
-
-/* callbacks */ /*TODO: put these into x52session */
-
-extern int32_t
-x52i_enable();
-
-extern void
-x52i_disable();
 
 
 /* state modifiers */
@@ -186,11 +175,14 @@ extern void
 x52i_commit(void);
 
 /**
-** resets the whole internal state.
+** resets the whole internal state. if shutdown is 1, then x52i_reset() will
+** close the x52device but not reopen it again, and as such releasing all
+** allocated resources. must be called once at least before attempting to
+** commit changes with x52i_commit().
+** returns 0 on success, -1 if no x52 device was found.
 **/
-
-extern void
-x52i_reset(void);
+extern int32_t
+x52i_reset(uint8_t shutdown);
 
 #endif /* _X52INTERFACE_H */
 

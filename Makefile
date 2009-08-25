@@ -1,6 +1,7 @@
 SOURCES	+= ./src/x52entry.c
 SOURCES	+= ./src/x52device.c
 SOURCES	+= ./src/x52interface.c
+SOURCES	+= ./src/x52session.c
 
 # partial libusb
 SOURCES	+= ./src/usb/usb.c

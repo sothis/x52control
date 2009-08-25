@@ -76,13 +76,13 @@ struct x52i_bright_t {
 	uint8_t		value[2];
 };
 
-static __thread struct x52d_t* 		x52d;
 static __thread struct x52i_time_t	x52i_time;
 static __thread struct x52i_zone_t	x52i_zone;
 static __thread struct x52i_date_t	x52i_date;
 static __thread struct x52i_text_t	x52i_text;
 static __thread struct x52i_led_t	x52i_led;
 static __thread struct x52i_bright_t	x52i_bright;
+static __thread struct x52d_t* x52d = 0;
 
 
 /* state modifiers */
@@ -295,6 +295,8 @@ static inline void _x52i_commit_brightness(void)
 
 void x52i_commit(void)
 {
+	if (!x52d)
+		return;
 	_x52i_commit_text();
 	_x52i_commit_led();
 	_x52i_commit_time();
@@ -303,8 +305,21 @@ void x52i_commit(void)
 	_x52i_commit_brightness();
 }
 
-void x52i_reset(void)
+int32_t x52i_reset(uint8_t shutdown)
 {
+	if (x52d) {
+		x52d_close(x52d);
+		x52d = 0;
+	}
+	if(shutdown)
+		return 0;
+
+	x52d = x52d_enumerate();
+	if (!x52d_ndevices(x52d)) {
+		x52d_close(x52d);
+		x52d = 0;
+		return -1;
+	}
 // TODO: sniff usb traffic under windows which control resets the device
 	memset(&x52i_time, 0, sizeof(struct x52i_time_t));
 	memset(&x52i_zone, 0, sizeof(struct x52i_zone_t));
@@ -312,62 +327,6 @@ void x52i_reset(void)
 	memset(&x52i_text, 0, sizeof(struct x52i_text_t));
 	memset(&x52i_led, 0, sizeof(struct x52i_led_t));
 	memset(&x52i_bright, 0, sizeof(struct x52i_bright_t));
-}
-
-
-/* callbacks */ /*TODO: put these into x52session */
-
-int32_t
-x52i_enable()
-{
-	x52d = x52d_enumerate();
-	if (!x52d_ndevices(x52d)) {
-		x52d_close(x52d);
-		x52d = 0;
-		return 0;
-	}
-	/* reset internal state */
-	x52i_reset();
-	/* set led and mfd brightness to maximum */
-	x52i_set_brightness(x52i_brightness_mfd, 127);
-	x52i_set_brightness(x52i_brightness_led, 127);
-	/* turn on all green and additional led's */
-	x52i_set_led_all(x52i_status_off);
-	x52i_set_led(x52i_led_missile, x52i_status_on);
-	x52i_set_led(x52i_led_throttle, x52i_status_on);
-	x52i_set_led_color_all(x52i_color_green, x52i_status_on);
-	/* clear all text */
-	x52i_set_text(x52i_line_0, 0);
-	x52i_set_text(x52i_line_1, 0);
-	x52i_set_text(x52i_line_2, 0);
-	/* initialize clock module */
-	x52i_set_date(0, 0, 0);
-	x52i_set_time(0, 0, x52i_mode_24h);
-	x52i_set_zone(x52i_offset_0, 0, x52i_mode_24h);
-	x52i_set_zone(x52i_offset_1, 0, x52i_mode_24h);
-	/* commit changes */
-	x52i_commit();
-	return 1;
-}
-
-void
-x52i_disable()
-{
-	if (!x52d)
-		return;
-	x52i_reset();
-	x52i_set_brightness(x52i_brightness_mfd, 0);
-	x52i_set_brightness(x52i_brightness_led, 0);
-	x52i_set_led_all(x52i_status_off);
-	x52i_set_text(x52i_line_0, 0);
-	x52i_set_text(x52i_line_1, 0);
-	x52i_set_text(x52i_line_2, 0);
-	x52i_set_date(0, 0, 0);
-	x52i_set_time(0, 0, x52i_mode_24h);
-	x52i_set_zone(x52i_offset_0, 0, x52i_mode_24h);
-	x52i_set_zone(x52i_offset_1, 0, x52i_mode_24h);
-	x52i_commit();
-	x52d_close(x52d);
-	x52d = 0;
+	return 0;
 }
 

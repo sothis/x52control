@@ -8,16 +8,11 @@ extern void XPluginDisable(void);
 
 int main(int argc, char* argv[], char* envp[])
 {
-#if 0
 	XPluginDisable();
-#endif
-	XPluginEnable();
-	getchar();
-	XPluginDisable();
-#if 0
 	XPluginEnable();
 	XPluginDisable();
-#endif
+	XPluginEnable();
+	XPluginDisable();
 	return 0;
 }
 

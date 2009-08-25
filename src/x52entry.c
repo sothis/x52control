@@ -1,6 +1,5 @@
 #include "x52version.h"
-#include "x52device.h"
-#include "x52interface.h"
+#include "x52session.h"
 #include <string.h>
 
 __attribute__ ((visibility("default")))
@@ -15,13 +14,13 @@ int XPluginStart(char* name, char* sig, char* descr)
 __attribute__ ((visibility("default")))
 int XPluginEnable(void)
 {
-	return x52i_enable();
+	return x52s_enable();
 }
 
 __attribute__ ((visibility("default")))
 void XPluginDisable(void)
 {
-	x52i_disable();
+	x52s_disable();
 }
 
 __attribute__ ((visibility("default")))
