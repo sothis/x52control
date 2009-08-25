@@ -91,11 +91,13 @@ enum x52i_brightness
 extern void
 x52i_set_brightness(enum x52i_brightness dev, uint8_t val);
 
+
 /**
 ** turn a specific led on or off.
 **/
 extern void
 x52i_set_led(enum x52i_led led, enum x52i_status status);
+
 
 /**
 ** set all led's on or off.
@@ -103,11 +105,13 @@ x52i_set_led(enum x52i_led led, enum x52i_status status);
 extern void
 x52i_set_led_all(enum x52i_status status);
 
+
 /**
 ** toggle a led to either on or off, depending on it's previous state.
 **/
 extern void
 x52i_toggle_led(enum x52i_led led);
+
 
 /**
 ** toogle a specific led-group, determined by their color, on or off.
@@ -120,11 +124,13 @@ extern void
 x52i_set_led_color(enum x52i_cled l, enum x52i_color c,
 enum x52i_status status);
 
+
 /**
 ** toogle all led-groups, determined by their color, on or off.
 **/
 extern void
 x52i_set_led_color_all(enum x52i_color c, enum x52i_status status);
+
 
 /**
 ** sets the text of a specific line on the multifunction display.
@@ -135,6 +141,7 @@ x52i_set_led_color_all(enum x52i_color c, enum x52i_status status);
 extern void
 x52i_set_text(enum x52i_line line, const char* txt);
 
+
 /**
 ** sets the time of the clock referenced as clock 1 by the X52 device.
 ** hour can be anything between 0 and 23, minute between 0 and 59, regardless if
@@ -143,6 +150,7 @@ x52i_set_text(enum x52i_line line, const char* txt);
 **/
 extern void
 x52i_set_time(uint8_t hour, uint8_t minute, enum x52i_mode mode);
+
 
 /**
 ** sets the time of the clocks referenced as clock 2 and 3 by the X52 device.
@@ -174,11 +182,13 @@ x52i_set_date(uint8_t day, uint8_t month, uint8_t year);
 extern void
 x52i_commit(void);
 
+
 /**
 ** resets the whole internal state.
 **/
 extern void
 x52i_reset_state(void);
+
 
 /**
 ** resets the whole internal state and the device.
@@ -189,6 +199,7 @@ x52i_reset_state(void);
 **/
 extern int32_t
 x52i_reset_device(uint8_t shutdown);
+
 
 #endif /* _X52INTERFACE_H */
 
