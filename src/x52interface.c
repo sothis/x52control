@@ -305,8 +305,22 @@ void x52i_commit(void)
 	_x52i_commit_brightness();
 }
 
-int32_t x52i_reset(uint8_t shutdown)
+void x52i_reset_state(void)
 {
+	memset(&x52i_time, 0, sizeof(struct x52i_time_t));
+	memset(&x52i_zone, 0, sizeof(struct x52i_zone_t));
+	memset(&x52i_date, 0, sizeof(struct x52i_date_t));
+	memset(&x52i_text, 0, sizeof(struct x52i_text_t));
+	memset(&x52i_led, 0, sizeof(struct x52i_led_t));
+	memset(&x52i_bright, 0, sizeof(struct x52i_bright_t));
+}
+
+int32_t x52i_reset_device(uint8_t shutdown)
+{
+/*
+* TODO: sniff usb traffic under windows which control message might be able
+* to reset the device
+*/
 	if (x52d) {
 		x52d_close(x52d);
 		x52d = 0;
@@ -320,13 +334,7 @@ int32_t x52i_reset(uint8_t shutdown)
 		x52d = 0;
 		return -1;
 	}
-// TODO: sniff usb traffic under windows which control resets the device
-	memset(&x52i_time, 0, sizeof(struct x52i_time_t));
-	memset(&x52i_zone, 0, sizeof(struct x52i_zone_t));
-	memset(&x52i_date, 0, sizeof(struct x52i_date_t));
-	memset(&x52i_text, 0, sizeof(struct x52i_text_t));
-	memset(&x52i_led, 0, sizeof(struct x52i_led_t));
-	memset(&x52i_bright, 0, sizeof(struct x52i_bright_t));
+	x52i_reset_state();
 	return 0;
 }
 

@@ -25,10 +25,11 @@ void XPluginDisable(void)
 
 __attribute__ ((visibility("default")))
 void XPluginStop(void)
-{}
+{
+	x52s_disable();
+}
 
 __attribute__ ((visibility("default")))
 void XPluginReceiveMessage(uint32_t from, uint32_t msg, void* arg)
-{
-}
+{}
 

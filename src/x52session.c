@@ -31,10 +31,9 @@ int32_t
 x52s_enable()
 {
 	/* try to open device, reset internal state */
-	int32_t res = x52i_reset(0);
+	int32_t res = x52i_reset_device(0);
 	if (res != 0)
 		return 0;
-
 	_x52s_init();
 	return 1;
 }
@@ -42,9 +41,9 @@ x52s_enable()
 void
 x52s_disable()
 {
-	x52i_reset(0);
+	x52i_reset_device(0);
 	_x52s_init();
 	/* close device and free allocated resources */
-	x52i_reset(1);
+	x52i_reset_device(1);
 }
 
