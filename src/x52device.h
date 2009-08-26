@@ -19,7 +19,7 @@ extern int32_t
 x52d_set_current(struct x52d_t* x52d, size_t device);
 
 extern int32_t
-x52d_control(struct x52d_t* x52d, int32_t val, int32_t idx);
+x52d_control(struct x52d_t* x52d, uint16_t val, uint8_t idx);
 
 #endif /* _X52DEVICE_H */
 

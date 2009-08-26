@@ -1,332 +1,343 @@
 #include "x52interface.h"
 #include "x52device.h"
+
 #include <string.h>
-#include <stdio.h>
-#include <stdarg.h>
+
 
 #define _set(x, y)	(x |= y)
 #define _clr(x, y)	(x &= ~y)
-#define _get(x, y)	((x & y) != 0)
-#define _setall(x)	(x = ~0)
-#define _clrall(x)	(x = 0)
+#define _tst(x, y)	((x & y) == y)
+#define _setall(x)	(x |= ~0)
+#define _clrall(x)	(x ^= x)
+#define _bit(x)		(1 << x)
 
+/**
+** the usb control message indices.
+** we calculate further values from a specific base where possible.
+**/
 enum x52i_control
 {
-	x52i_ctrl_24hourmode		= 0x8000,
-	x52i_ctrl_negativeoffset	= 0x0400,
+	x52i_ctrl_negative		= 0x0400,
 	x52i_ctrl_brightness		= 0xb0,
-/*
-	x52i_ctrl_mfd_brightness	= 0xb1,
-	x52i_ctrl_led_brightness	= 0xb2,
-*/
+	x52i_ctrl_blink_clutch		= 0xb4,
 	x52i_ctrl_setled		= 0xb8,
 	x52i_ctrl_time			= 0xc0,
-/*
-	x52i_ctrl_timeoffset1		= 0xc1,
-	x52i_ctrl_timeoffset2		= 0xc2,
-*/
-	x52i_ctrl_daymonth		= 0xc4,
-	x52i_ctrl_year			= 0xc8,
-	x52i_ctrl_settext		= 0xd0,
-/*
-	x52i_ctrl_settext1		= 0xd1,
-	x52i_ctrl_settext2		= 0xd2,
-	x52i_ctrl_settext3		= 0xd4,
-*/
-	x52i_ctrl_cleartext		= 0xd8,
-/*
-	x52i_ctrl_cleartext1		= 0xd9,
-	x52i_ctrl_cleartext2		= 0xda,
-	x52i_ctrl_cleartext3		= 0xdc,
-*/
+	x52i_ctrl_date			= 0xc4,
+	x52i_ctrl_text			= 0xd0,
+	x52i_ctrl_clearflag		= 0x08,
+	x52i_ctrl_shiftindicator	= 0xfd,
+
+	x52i_ctrl_led_min		= 1,
+	x52i_ctrl_led_max		= 20,
+	x52i_bright_base		= x52i_bright_mfd,
+	x52i_zone_base			= x52i_time_zone1,
+	x52i_text_base			= x52i_text_line1,
 };
 
-struct x52i_time_t {
-	uint8_t		dirty	:1;
-	uint8_t		mode24	:1;
-	uint8_t		hour	:5;
-	uint8_t		minute	:6;
-};
 
-struct x52i_zone_t {
-	uint8_t		dirty	:2;
-	uint8_t		mode24[2];
-	int16_t		offset[2];
-};
-
-struct x52i_date_t {
-	uint8_t		dirty	:1;
-	uint8_t		day	:5;
-	uint8_t		month	:4;
-	uint8_t		year	:4;
-};
-
-struct x52i_text_t {
-	uint8_t		dirty	:3;
+/**
+** holds the complete device state. is used by x52i_commit() and state
+** modifier functions.
+**/
+static __thread
+struct x52i_state_t {
+	uint32_t	dirty;
+	uint32_t	ledstates;
+	uint16_t	dat[29];
 	uint16_t	lines[3][8];
-};
-
-struct x52i_led_t {
-	uint32_t	dirty	:20;
-	uint32_t	state	:20;
-};
-
-struct x52i_bright_t {
-	uint32_t	dirty	:2;
-	uint8_t		value[2];
-};
-
-static __thread struct x52i_time_t	x52i_time;
-static __thread struct x52i_zone_t	x52i_zone;
-static __thread struct x52i_date_t	x52i_date;
-static __thread struct x52i_text_t	x52i_text;
-static __thread struct x52i_led_t	x52i_led;
-static __thread struct x52i_bright_t	x52i_bright;
-static __thread struct x52d_t* x52d = 0;
+} x52i_state = {0};
 
 
-/* state modifiers */
+static __thread struct x52d_t*		x52d = 0;
 
-void x52i_set_brightness(enum x52i_brightness dev, uint8_t val)
+
+/* shift indicator modifier/committer */
+
+void
+x52i_set_shift(enum x52i_status status)
 {
-	x52i_bright.value[dev] = val;
-	_set(x52i_bright.dirty, (1 << dev));
+	if (x52i_state.dat[x52i_misc_shift] == status)
+		return;
+	x52i_state.dat[x52i_misc_shift] = status;
+	_set(x52i_state.dirty, _bit(x52i_misc_shift));
 }
 
-void x52i_set_led(enum x52i_led led, enum x52i_status status)
+static inline void
+_x52i_commit_shift(void)
 {
-	switch (status) {
-	case x52i_status_on:
-		_set(x52i_led.state, (1 << led));
-		break;
-	case x52i_status_off:
-		_clr(x52i_led.state, (1 << led));
-		break;
-	}
-	_set(x52i_led.dirty, (1 << led));
-}
-
-void x52i_toggle_led(enum x52i_led led)
-{
-	_get(x52i_led.state, (1 << led))?x52i_set_led(led, x52i_status_off):
-	x52i_set_led(led, x52i_status_on);
-}
-
-void x52i_set_led_all(enum x52i_status status)
-{
-	switch (status) {
-	case x52i_status_on:
-		_setall(x52i_led.state);
-		break;
-	case x52i_status_off:
-		_clrall(x52i_led.state);
-		break;
-	}
-	_setall(x52i_led.dirty);
-}
-
-void x52i_set_led_color(enum x52i_cled l, enum x52i_color c,
-enum x52i_status status)
-{
-	switch (c) {
-	case x52i_color_red:
-		if (status == x52i_status_on) {
-			x52i_set_led(l, x52i_status_on);
-			x52i_set_led(l+1, x52i_status_off);
-		}
-		if (status == x52i_status_off) {
-			x52i_set_led(l, x52i_status_off);
-		}
-		break;
-	case x52i_color_green:
-		if (status == x52i_status_on) {
-			x52i_set_led(l, x52i_status_off);
-			x52i_set_led(l+1, x52i_status_on);
-		}
-		if (status == x52i_status_off) {
-			x52i_set_led(l+1, x52i_status_off);
-		}
-		break;
-	case x52i_color_amber:
-		if (status == x52i_status_on) {
-			x52i_set_led(l, x52i_status_on);
-			x52i_set_led(l+1, x52i_status_on);
-		}
-		if (status == x52i_status_off) {
-			x52i_set_led(l, x52i_status_off);
-			x52i_set_led(l+1, x52i_status_off);
-		}
-		break;
+	if (_tst(x52i_state.dirty, _bit(x52i_misc_shift))) {
+			x52d_control(x52d,
+				x52i_state.dat[x52i_misc_shift],
+				x52i_ctrl_shiftindicator);
 	}
 }
 
-void x52i_set_led_color_all(enum x52i_color c, enum x52i_status status)
+
+/* clutchbutton led blink modifier/committer */
+
+void
+x52i_set_clutchblink(enum x52i_status status)
 {
-	for (uint8_t l=x52i_cled_A; l<=x52i_cled_i; l+=2) {
-		x52i_set_led_color(l, c, status);
+	if (x52i_state.dat[x52i_misc_clutchblink] == status)
+		return;
+	x52i_state.dat[x52i_misc_clutchblink] = status;
+	_set(x52i_state.dirty, _bit(x52i_misc_clutchblink));
+}
+
+static inline void
+_x52i_commit_clutchblink(void)
+{
+	if (_tst(x52i_state.dirty, _bit(x52i_misc_clutchblink))) {
+			x52d_control(x52d,
+				x52i_state.dat[x52i_misc_clutchblink],
+				x52i_ctrl_blink_clutch);
 	}
 }
 
-void x52i_set_text(enum x52i_line line, const char* txt)
+
+/* brightness modifier/committer */
+
+void
+x52i_set_brightness(enum x52i_device dev, uint8_t val)
 {
+	if (x52i_state.dat[dev] == val)
+		return;
+	x52i_state.dat[dev] = val;
+	_set(x52i_state.dirty, _bit(dev));
+}
+
+static inline void
+_x52i_commit_brightness(void)
+{
+	for (uint8_t i = x52i_bright_mfd; i <= x52i_bright_led; i++) {
+		if (_tst(x52i_state.dirty, _bit(i))) {
+			register uint8_t d = i - x52i_bright_base;
+			register uint8_t c = x52i_ctrl_brightness;
+			_set(c, _bit(d));
+			x52d_control(x52d, x52i_state.dat[i], c);
+		}
+	}
+}
+
+
+/* led modifier/committer */
+
+static inline void
+_x52i_update_led_data(uint32_t leds)
+{
+	for (uint8_t i = x52i_ctrl_led_min; i <= x52i_ctrl_led_max; i++) {
+		register uint16_t v = _tst(x52i_state.ledstates, _bit(i))
+					| (i << 8);
+		if (x52i_state.dat[i] == v)
+			continue;
+		x52i_state.dat[i] = v;
+		_set(x52i_state.dirty, _bit(i));
+	}
+}
+
+void
+x52i_set_led(uint32_t leds)
+{
+	_set(x52i_state.ledstates, leds);
+	_x52i_update_led_data(leds);
+}
+
+void
+x52i_clr_led(uint32_t leds)
+{
+	_clr(x52i_state.ledstates, leds);
+	_x52i_update_led_data(leds);
+}
+
+static inline void
+_x52i_commit_led(void)
+{
+	for (uint8_t i = x52i_ctrl_led_min; i <= x52i_ctrl_led_max; i++) {
+		if (_tst(x52i_state.dirty, _bit(i)))
+			x52d_control(x52d, x52i_state.dat[i], x52i_ctrl_setled);
+	}
+}
+
+
+/* text modifier/committer */
+
+void
+x52i_set_text(enum x52i_device line, const char* txt)
+{
+	uint8_t idx = line - x52i_text_base;
 	if (!txt) txt = "";
-	_set(x52i_text.dirty, (1 << line));
-	strncpy((char*)x52i_text.lines[line], txt, sizeof(uint16_t)*8);
+
+	if (!strncmp((char*)x52i_state.lines[idx], txt, sizeof(uint16_t)*8))
+		return;
+
+	strncpy((char*)x52i_state.lines[idx], txt, sizeof(uint16_t)*8);
+	_set(x52i_state.dirty, _bit(line));
 	#if defined (__ppc__)
 	for (uint8_t charpair = 0; charpair < 8; ++charpair) {
-		x52i_text.lines[line][charpair] =
-		((x52i_text.lines[line][charpair] >> 8) & 0xff) |
-		((x52i_text.lines[line][charpair] & 0xff) << 8);
+		x52i_state.lines[idx][charpair] =
+		((x52i_state.lines[idx][charpair] >> 8) & 0xff) |
+		((x52i_state.lines[idx][charpair] & 0xff) << 8);
 	}
 	#endif /* __ppc__ */
 }
 
-void x52i_set_time(uint8_t hour, uint8_t minute, enum x52i_mode mode)
+static inline void
+_x52i_commit_text(void)
 {
-	x52i_time.dirty = 1;
-	x52i_time.mode24 = mode;
-	x52i_time.hour = hour;
-	x52i_time.minute = minute;
-}
-
-void x52i_set_zone(enum x52i_offset offset, int16_t value, enum x52i_mode mode)
-{
-	_set(x52i_zone.dirty, (1 << offset));
-	x52i_zone.mode24[offset] = mode;
-	x52i_zone.offset[offset] = value;
-}
-
-void x52i_set_date(uint8_t day, uint8_t month, uint8_t year)
-{
-	x52i_date.dirty = 1;
-	x52i_date.day = day;
-	x52i_date.month = month;
-	x52i_date.year = year;
-}
-
-
-/* commit functions */
-
-static inline void _x52i_commit_textline(uint8_t line)
-{
-	int8_t settext = x52i_ctrl_settext;
-	_set(settext, (1 << line));
-
-	for (uint8_t charpair = 0; charpair < 8; ++charpair) {
-		x52d_control(x52d, x52i_text.lines[line][charpair], settext);
-	}
-}
-
-static inline void _x52i_commit_text(void)
-{
-	for (uint8_t line = x52i_line_0; line <= x52i_line_2; ++line) {
-		if (_get(x52i_text.dirty, (1 << line))) {
-			int8_t cleartext = x52i_ctrl_cleartext;
-			_set(cleartext, (1 << line));
-			x52d_control(x52d, 0, cleartext);
-			_x52i_commit_textline(line);
-			_clr(x52i_text.dirty, (1 << line));
+	for (uint8_t i = x52i_text_line1; i <= x52i_text_line3; i++) {
+		if (_tst(x52i_state.dirty, _bit(i))) {
+			register uint8_t l = i - x52i_text_base;
+			register uint8_t c = x52i_ctrl_text;
+			_set(c, _bit(l));
+			x52d_control(x52d, 0, c | x52i_ctrl_clearflag);
+			for (uint8_t ch = 0; ch < 8; ++ch)
+				x52d_control(x52d, x52i_state.lines[l][ch], c);
 		}
 	}
 }
 
-static inline void _x52i_commit_led(void)
-{
-	for (uint8_t led = x52i_led_missile; led <= x52i_led_throttle; ++led) {
-		if (_get(x52i_led.dirty, (1 << led))) {
-			uint16_t l = _get(x52i_led.state, (1 << led))
-					| ((led+1) << 8);
-			x52d_control(x52d, l, x52i_ctrl_setled);
-			_clr(x52i_led.dirty, (1 << led));
-		}
-	}
-}
 
-static inline void _x52i_commit_time(void)
+/* time modifier/committer */
+
+void
+x52i_set_time(uint8_t hour, uint8_t minute, enum x52i_mode mode)
 {
-	uint16_t time;
-	if (!x52i_time.dirty)
+	uint16_t val = minute | (hour << 8) | mode;
+	if (x52i_state.dat[x52i_time_clock] == val)
 		return;
-	time = x52i_time.minute | (x52i_time.hour << 8);
-	if (x52i_time.mode24)
-		time |= x52i_ctrl_24hourmode;
-	x52d_control(x52d, time, x52i_ctrl_time);
-	x52i_time.dirty = 0;
+	x52i_state.dat[x52i_time_clock] = val;
+	_set(x52i_state.dirty, _bit(x52i_time_clock));
 }
 
-static inline void _x52i_commit_zone(void)
+static inline void
+_x52i_commit_time(void)
 {
-	for (uint8_t off = x52i_offset_0; off <= x52i_offset_1; ++off) {
-		if (_get(x52i_zone.dirty, (1 << off))) {
-			int8_t time = x52i_ctrl_time;
-			_set(time, (1 << off));
-			int16_t o = x52i_zone.offset[off];
-			if (o < 0)
-				o = (-o)|x52i_ctrl_negativeoffset;
-			if (x52i_zone.mode24[off])
-				o |= x52i_ctrl_24hourmode;
-			x52d_control(x52d, o, time);
-			_clr(x52i_zone.dirty, (1 << off));
-		}
-	}
+	if (_tst(x52i_state.dirty, _bit(x52i_time_clock)))
+		x52d_control(x52d, x52i_state.dat[x52i_time_clock],
+			x52i_ctrl_time);
 }
 
-static inline void _x52i_commit_date(void)
+
+/* timezone modifier/committer */
+
+void
+x52i_set_zone(enum x52i_device zone, int16_t value, enum x52i_mode mode)
 {
-	if (!x52i_date.dirty)
+	if (value < 0)
+		value = (-value) | x52i_ctrl_negative;
+	value |= mode;
+	if (x52i_state.dat[zone] == value)
 		return;
-	x52d_control(x52d, (x52i_date.day | (x52i_date.month << 8)),
-		x52i_ctrl_daymonth);
-	x52d_control(x52d, x52i_date.year, x52i_ctrl_year);
-	x52i_date.dirty = 0;
+	x52i_state.dat[zone] = value;
+	_set(x52i_state.dirty, _bit(zone));
 }
 
-static inline void _x52i_commit_brightness(void)
+static inline void
+_x52i_commit_zone(void)
 {
-	for (uint8_t d = x52i_brightness_mfd; d <= x52i_brightness_led; ++d) {
-		if (_get(x52i_bright.dirty, (1 << d))) {
-			int8_t bright = x52i_ctrl_brightness;
-			_set(bright, (1 << d));
-			x52d_control(x52d, x52i_bright.value[d], bright);
-			_clr(x52i_bright.dirty, (1 << d));
+	for (uint8_t i = x52i_time_zone1; i <= x52i_time_zone2; i++) {
+		if (_tst(x52i_state.dirty, _bit(i))) {
+			register uint8_t z = i - x52i_zone_base;
+			register uint8_t c = x52i_ctrl_time;
+			_set(c, _bit(z));
+			x52d_control(x52d, x52i_state.dat[i], c);
 		}
 	}
 }
 
-void x52i_commit(void)
+
+/* date modifier/committer */
+
+void
+x52i_set_date(uint8_t d1, uint8_t d2, uint8_t d3)
 {
-	if (!x52d)
+	uint16_t val = d1 | (d2 << 8);
+	if ((x52i_state.dat[x52i_date_val12] == val) &&
+		(x52i_state.dat[x52i_date_val3] == d3))
+		return;
+	x52i_state.dat[x52i_date_val12] = val;
+	x52i_state.dat[x52i_date_val3] = d3;
+	_set(x52i_state.dirty, _bit(x52i_date_val12) | _bit(x52i_date_val3));
+}
+
+static inline void
+_x52i_commit_date(void)
+{
+	if (_tst(x52i_state.dirty, _bit(x52i_date_val12))) {
+		x52d_control(x52d, x52i_state.dat[x52i_date_val12],
+			x52i_ctrl_date);
+		x52d_control(x52d, x52i_state.dat[x52i_date_val3],
+			x52i_ctrl_date + 4);
+	}
+}
+
+void
+x52i_reset_state(void)
+{
+	memset(&x52i_state, 0, sizeof(struct x52i_state_t));
+}
+
+
+/* global committer */
+
+void
+x52i_commit(void)
+{
+	if (!x52d || !x52i_state.dirty)
 		return;
 	_x52i_commit_text();
-	_x52i_commit_led();
 	_x52i_commit_time();
 	_x52i_commit_zone();
 	_x52i_commit_date();
+	_x52i_commit_shift();
+	_x52i_commit_clutchblink();
+	_x52i_commit_led();
 	_x52i_commit_brightness();
+	_clrall(x52i_state.dirty);
 }
 
-void x52i_reset_state(void)
+
+/* maintenance functions */
+
+void
+x52i_set_defaults(void)
 {
-	memset(&x52i_time, 0, sizeof(struct x52i_time_t));
-	memset(&x52i_zone, 0, sizeof(struct x52i_zone_t));
-	memset(&x52i_date, 0, sizeof(struct x52i_date_t));
-	memset(&x52i_text, 0, sizeof(struct x52i_text_t));
-	memset(&x52i_led, 0, sizeof(struct x52i_led_t));
-	memset(&x52i_bright, 0, sizeof(struct x52i_bright_t));
+	/* flush internal state buffer with zeros */
+	x52i_reset_state();
+	/* force committing of all values */
+	_setall(x52i_state.dirty);
+	/* set led and mfd brightness to maximum */
+	x52i_set_brightness(x52i_bright_mfd, 128);
+	x52i_set_brightness(x52i_bright_led, 128);
+	/* turn on all green and additional led's */
+	x52i_clr_led(x52i_led_all);
+	x52i_set_led(x52i_led_all_green);
+	x52i_set_led(x52i_led_launch);
+	x52i_set_led(x52i_led_throttle);
+	/* clear all text */
+	x52i_set_text(x52i_text_line1, 0);
+	x52i_set_text(x52i_text_line2, 0);
+	x52i_set_text(x52i_text_line3, 0);
+	/* initialize clock module */
+	x52i_set_date(0, 0, 0);
+	x52i_set_time(0, 0, x52i_mode_24h);
+	x52i_set_zone(x52i_time_zone1, 0, x52i_mode_24h);
+	x52i_set_zone(x52i_time_zone2, 0, x52i_mode_24h);
+	/* misc */
+	x52i_set_clutchblink(x52i_status_off);
+	x52i_set_shift(x52i_status_off);
+	/* commit changes */
+	x52i_commit();
 }
 
-int32_t x52i_reset_device(uint8_t shutdown)
+
+/* control functions */
+
+int32_t
+x52i_open_device(void)
 {
-/*
-* TODO: sniff usb traffic under windows which control message might be able
-* to reset the device
-*/
-	if (x52d) {
+	if (x52d)
 		x52d_close(x52d);
-		x52d = 0;
-	}
-	if(shutdown)
-		return 0;
 
 	x52d = x52d_enumerate();
 	if (!x52d_ndevices(x52d)) {
@@ -334,7 +345,17 @@ int32_t x52i_reset_device(uint8_t shutdown)
 		x52d = 0;
 		return -1;
 	}
-	x52i_reset_state();
+	x52i_set_defaults();
 	return 0;
+}
+
+void
+x52i_close_device(void)
+{
+	if (!x52d)
+		return;
+	x52i_set_defaults();
+	x52d_close(x52d);
+	x52d = 0;
 }
 

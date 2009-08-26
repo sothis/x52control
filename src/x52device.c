@@ -109,7 +109,7 @@ x52d_set_current(struct x52d_t* x52d, size_t device)
 }
 
 int32_t
-x52d_control(struct x52d_t* x52d, int32_t val, int32_t idx)
+x52d_control(struct x52d_t* x52d, uint16_t val, uint8_t idx)
 {
 	return usb_control_msg(x52d->devices[x52d->current].handle,
 		USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT,

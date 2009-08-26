@@ -10,6 +10,7 @@ int main(int argc, char* argv[], char* envp[])
 {
 	XPluginDisable();
 	XPluginEnable();
+	getchar();
 	XPluginDisable();
 	XPluginEnable();
 	XPluginDisable();

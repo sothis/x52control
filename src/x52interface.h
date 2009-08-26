@@ -2,134 +2,118 @@
 #define _X52INTERFACE_H
 
 #include <stdint.h>
-#include <stddef.h>
 
-enum x52i_cled
-{
-	x52i_cled_A		= 0x01,
-	x52i_cled_B		= 0x03,
-	x52i_cled_D		= 0x05,
-	x52i_cled_E		= 0x07,
-	x52i_cled_T1_T2		= 0x09,
-	x52i_cled_T3_T4		= 0x0b,
-	x52i_cled_T5_T6		= 0x0d,
-	x52i_cled_coolie	= 0x0f,
-	x52i_cled_i		= 0x11,
-};
 
-enum x52i_color
-{
-	x52i_color_red		= 0x00,
-	x52i_color_green	= 0x01,
-	x52i_color_amber	= 0x03,
-};
+enum x52i_device {
+	x52i_led_launch		= 1 << 1,
+	x52i_led_A_red		= 1 << 2,
+	x52i_led_A_green	= 1 << 3,
+	x52i_led_A_amber	= x52i_led_A_red | x52i_led_A_green,
+	x52i_led_B_red		= 1 << 4,
+	x52i_led_B_green	= 1 << 5,
+	x52i_led_B_amber	= x52i_led_B_red | x52i_led_B_green,
+	x52i_led_D_red		= 1 << 6,
+	x52i_led_D_green	= 1 << 7,
+	x52i_led_D_amber	= x52i_led_D_red | x52i_led_D_green,
+	x52i_led_E_red		= 1 << 8,
+	x52i_led_E_green	= 1 << 9,
+	x52i_led_E_amber	= x52i_led_E_red | x52i_led_E_green,
+	x52i_led_T1T2_red	= 1 << 10,
+	x52i_led_T1T2_green	= 1 << 11,
+	x52i_led_T1T2_amber	= x52i_led_T1T2_red | x52i_led_T1T2_green,
+	x52i_led_T3T4_red	= 1 << 12,
+	x52i_led_T3T4_green	= 1 << 13,
+	x52i_led_T3T4_amber	= x52i_led_T3T4_red | x52i_led_T3T4_green,
+	x52i_led_T5T6_red	= 1 << 14,
+	x52i_led_T5T6_green	= 1 << 15,
+	x52i_led_T5T6_amber	= x52i_led_T5T6_red | x52i_led_T5T6_green,
+	x52i_led_pov2_red	= 1 << 16,
+	x52i_led_pov2_green	= 1 << 17,
+	x52i_led_pov2_amber	= x52i_led_pov2_red | x52i_led_pov2_green,
+	x52i_led_clutch_red	= 1 << 18,
+	x52i_led_clutch_green	= 1 << 19,
+	x52i_led_clutch_amber	= x52i_led_clutch_red | x52i_led_clutch_green,
+	x52i_led_throttle	= 1 << 20,
+	x52i_led_all_red	= x52i_led_A_red | x52i_led_B_red
+				| x52i_led_D_red | x52i_led_E_red
+				| x52i_led_T1T2_red | x52i_led_T3T4_red
+				| x52i_led_T5T6_red | x52i_led_pov2_red
+				| x52i_led_clutch_red,
+	x52i_led_all_green	= x52i_led_A_green | x52i_led_B_green
+				| x52i_led_D_green | x52i_led_E_green
+				| x52i_led_T1T2_green | x52i_led_T3T4_green
+				| x52i_led_T5T6_green | x52i_led_pov2_green
+				| x52i_led_clutch_green,
+	x52i_led_all_amber	= x52i_led_all_green | x52i_led_all_red,
+	x52i_led_all		= x52i_led_launch | x52i_led_throttle
+				| x52i_led_all_amber,
 
-enum x52i_led
-{
-	x52i_led_missile	= 0,
-	x52i_led_A_red		= 1,
-	x52i_led_A_green	= 2,
-	x52i_led_B_red		= 3,
-	x52i_led_B_green	= 4,
-	x52i_led_D_red		= 5,
-	x52i_led_D_green	= 6,
-	x52i_led_E_red		= 7,
-	x52i_led_E_green	= 8,
-	x52i_led_T1_T2_red	= 9,
-	x52i_led_T1_T2_green	= 10,
-	x52i_led_T3_T4_red	= 11,
-	x52i_led_T3_T4_green	= 12,
-	x52i_led_T5_T6_red	= 13,
-	x52i_led_T5_T6_green	= 14,
-	x52i_led_coolie_red	= 15,
-	x52i_led_coolie_green	= 16,
-	x52i_led_i_red		= 17,
-	x52i_led_i_green	= 18,
-	x52i_led_throttle	= 19,
+	x52i_misc_clutchblink	= 0,
+	/* 1..20: leds */
+	x52i_misc_shift		= 21,
+	x52i_bright_mfd		= 22,
+	x52i_bright_led		= 23,
+	x52i_time_clock		= 24,
+	x52i_time_zone1		= 25,
+	x52i_time_zone2		= 26,
+	x52i_date_val12		= 27,
+	x52i_date_val3		= 28,
+	x52i_text_line1		= 29,
+	x52i_text_line2		= 30,
+	x52i_text_line3		= 31,
 };
 
 enum x52i_status
 {
-	x52i_status_off		= 0,
-	x52i_status_on		= 1,
-};
-
-enum x52i_line
-{
-	x52i_line_0		= 0,
-	x52i_line_1		= 1,
-	x52i_line_2		= 2,
-};
-
-enum x52i_offset
-{
-	x52i_offset_0		= 0,
-	x52i_offset_1		= 1,
+	x52i_status_off		= 0x50,
+	x52i_status_on		= 0x51,
 };
 
 enum x52i_mode
 {
-	x52i_mode_12h		= 0,
-	x52i_mode_24h		= 1,
-};
-
-enum x52i_brightness
-{
-	x52i_brightness_mfd	= 0,
-	x52i_brightness_led	= 1,
+	x52i_mode_12h		= 0x0000,
+	x52i_mode_24h		= 0x8000,
 };
 
 
 /* state modifiers */
 
 /**
+** toggle the shift indicator on the multifunction display.
+**/
+extern void
+x52i_set_shift(enum x52i_status status);
+
+
+/**
+** toggle blinking of the clutchbutton (i-button) and center-cooliehat led.
+**/
+extern void
+x52i_set_clutchblink(enum x52i_status status);
+
+
+/**
 ** sets the brightness of all led's (including those which can't be turned off
-** with x52i_set_leds(), like the multicolor-led indicating the current joystick
-** mode and the green one in the center coolie hat) or the multifunction
-** display. value can anything between 0 (dark) and 127 (bright)
+** with x52i_clr_led(), like the multicolor-led indicating the current joystick
+** mode and the green one in the center coolie hat) and the multifunction
+** display. value can anything between 0 (dark) and 128 (bright)
 **/
 extern void
-x52i_set_brightness(enum x52i_brightness dev, uint8_t val);
+x52i_set_brightness(enum x52i_device dev, uint8_t val);
 
 
 /**
-** turn a specific led on or off.
+** turn specified leds on.
 **/
 extern void
-x52i_set_led(enum x52i_led led, enum x52i_status status);
+x52i_set_led(uint32_t leds);
 
 
 /**
-** set all led's on or off.
+** turn specified leds off.
 **/
 extern void
-x52i_set_led_all(enum x52i_status status);
-
-
-/**
-** toggle a led to either on or off, depending on it's previous state.
-**/
-extern void
-x52i_toggle_led(enum x52i_led led);
-
-
-/**
-** toogle a specific led-group, determined by their color, on or off.
-** note that the throttle led and the missilelaunch button led don't have
-** specific colors. so they won't be affected by these functions.
-** use x52i_set_leds() with x52i_led_missile and x52i_led_throttle to modify
-** them.
-**/
-extern void
-x52i_set_led_color(enum x52i_cled l, enum x52i_color c,
-enum x52i_status status);
-
-
-/**
-** toogle all led-groups, determined by their color, on or off.
-**/
-extern void
-x52i_set_led_color_all(enum x52i_color c, enum x52i_status status);
+x52i_clr_led(uint32_t leds);
 
 
 /**
@@ -139,7 +123,7 @@ x52i_set_led_color_all(enum x52i_color c, enum x52i_status status);
 ** 16 characters will be copied to the device.
 **/
 extern void
-x52i_set_text(enum x52i_line line, const char* txt);
+x52i_set_text(enum x52i_device line, const char* txt);
 
 
 /**
@@ -155,51 +139,64 @@ x52i_set_time(uint8_t hour, uint8_t minute, enum x52i_mode mode);
 /**
 ** sets the time of the clocks referenced as clock 2 and 3 by the X52 device.
 ** these clocks are offsetbased taking clock 1 as reference.
-** offset can anything between -1023 and +1023, regardless if in 12h or 24h mode.
-** it represents the offset in minutes based on the time set with
-** x52i_set_time(). the meaningful limits are -720 and +720, which is -12h and
-** +12h. the offset driven clocks can be independently setup to be either in 12h
+** offset can anything between -1023 and +1023, regardless if in 12h or 24h
+** mode. it represents the offset in minutes based on the time set with
+** x52i_set_time(), so in hours the limits are -17 and +17 respectively.
+** the offset driven clocks can be independently setup to be either in 12h
 ** or 24h mode.
 **/
 extern void
-x52i_set_zone(enum x52i_offset offset, int16_t value, enum x52i_mode mode);
+x52i_set_zone(enum x52i_device zone, int16_t value, enum x52i_mode mode);
 
 
 /**
-** sets the date.
-** year and month can anything between 0 and 15 (well done Saitek! you're all
-** capitalistic morons >.<), day 0-31.
+** sets the date. the display has 3 digit groups, each can display 2-digit
+** numbers. digit group 1 and 2 support numbers from 0 to 39, digit group
+** 3 from 0 to 63. so until year 2039 any day-month-year combination is
+** possible. must be called once at least to activate the date-time display
+** on the mfd.
 **/
 extern void
-x52i_set_date(uint8_t day, uint8_t month, uint8_t year);
-
-
-/* committer */
-
-/**
-** commit changes to the device at once.
-**/
-extern void
-x52i_commit(void);
+x52i_set_date(uint8_t d1, uint8_t d2, uint8_t d3);
 
 
 /**
-** resets the whole internal state.
+** resets the internal state buffer.
 **/
 extern void
 x52i_reset_state(void);
 
 
+/* committer, device control and maintenance */
+
 /**
-** resets the whole internal state and the device.
-** if shutdown is 1, then x52i_reset_device() will close the x52 device but
-** won't reopen it again, and as such releasing all allocated resources. must be
-** called once at least before attempting to commit changes with x52i_commit().
-** returns 0 on success, -1 if no x52 device was found.
+** commit changes of the internal state buffer to the device at once.
+**/
+extern void
+x52i_commit(void);
+
+/**
+** fills the internal state buffer with default values and commits them
+** to the device immediately.
+**/
+extern void
+x52i_set_defaults(void);
+
+/**
+** tries to open a connection to a X52 device. if successful it initializes
+** the device by calling x52i_set_defaults(). if there was already a connection,
+** x52i_open_device() closes it and opens a new one. returns 0 on success, -1
+** when no X52 device was found.
 **/
 extern int32_t
-x52i_reset_device(uint8_t shutdown);
+x52i_open_device(void);
 
+/**
+** resets the device by calling x52i_set_defaults(). after that it closes the
+** device and frees all allocated resources.
+**/
+extern void
+x52i_close_device(void);
 
 #endif /* _X52INTERFACE_H */
 
