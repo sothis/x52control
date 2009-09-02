@@ -54,7 +54,7 @@ OBJECTS	:= $(patsubst %.c, $(BUILDDIR)/obj/%.o, $(SOURCES))
 
 print_cc	:= echo [ CC ]
 print_so	:= echo [ SO ]
-print_so	:= echo [ LD ]
+print_ld	:= echo [ LD ]
 print_memc	:= echo [ MEMCHECK ]
 print_prf	:= echo [ PROFILE  ]
 print_error	:= (echo [ FAILED ] && false)
@@ -94,7 +94,7 @@ $(BUILDDIR)/lin.xpl: $(OBJECTS)
 	$(print_error)
 
 $(BUILDDIR)/test: $(BUILDDIR)/lin.xpl $(BUILDDIR)/obj/./test/main.o
-	@$(print_so) $(@)
+	@$(print_ld) $(@)
 	@-mkdir -p $(dir $(@))
 	@$(LD) -m32 -Wl,-rpath='$$ORIGIN',-z,origin -o $@ $(BUILDDIR)/lin.xpl \
 	$(BUILDDIR)/obj/./test/main.o || $(print_error)
