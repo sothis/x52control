@@ -1,114 +1,224 @@
-SOURCES	+= ./src/x52entry.c
-SOURCES	+= ./src/x52device.c
-SOURCES	+= ./src/x52interface.c
-SOURCES	+= ./src/x52session.c
-
-# partial libusb
-SOURCES	+= ./src/usb/usb.c
-SOURCES	+= ./src/usb/linux.c
-SOURCES	+= ./src/usb/error.c
-SOURCES	+= ./src/usb/descriptors.c
-
-
-INCLUDE := -I./include -I./src
-DEFINES :=
-
-
-ifndef CONF
-	CONF	:= debug
+VERSION := $(shell ./version)
+ifeq ($(shell uname), Linux)
+	PLAT_LINUX	:= Yes
+	PLATFORM	:= linux
+else ifeq ($(shell uname), Darwin)
+	PLAT_DARWIN	:= Yes
+	PLATFORM	:= darwin
 endif
+################################################################################
+
+### libx52
+SRC		+= ./libx52/init/init_ctor.c
+SRC		+= ./libx52/usb/usb.c
+SRC		+= ./libx52/usb/error.c
+SRC		+= ./libx52/usb/descriptors.c
+SRC		+= ./libx52/usb/$(PLATFORM).c
+SRC		+= ./libx52/x52device.c
+SRC		+= ./libx52/x52interface.c
+SRC		+= ./libx52/x52session.c
+
+### x52control
+SRC		+= ./src/entry.c
+
+
+
+################################################################################
+
 ifeq ($(CONF), debug)
 	DEBUG	:= Yes
 endif
 ifeq ($(CONF), release)
 	RELEASE	:= Yes
 endif
-ifeq ($(CONF), release_s)
-	RELEASE_STATIC	:= Yes
+ifeq ($(CONF), release_dist)
+	RELEASE	:= Yes
+	DIST	:= Yes
 endif
-OUTDIR		:= build
+
+# preprocessor definitions
+ifdef RELEASE
+DEFINES		+= -DNDEBUG
+endif
+DEFINES		+= -D_GNU_SOURCE=1
+DEFINES		+= -D_FILE_OFFSET_BITS=64
+DEFINES		+= -D_LARGEFILE64_SOURCE=1
+DEFINES		+= -D_LARGEFILE_SOURCE=1
+DEFINES		+= -D_BSD_SOURCE=1
+DEFINES		+= -D$(PLATFORM)=1
+DEFINES		+= -DVERSION='"$(VERSION)"'
+
+
+# toolchain configuration
+INCLUDES	+= -I./src
+INCLUDES	+= -I./libx52
+INCLUDES	+= -I./libx52/include
+
+OUTDIR		:= ./build
 BUILDDIR	:= $(OUTDIR)/$(CONF)
 
-LD	:= gcc
-CC	:= gcc
-
-ifdef DEBUG
-CFLAGS	:= -m32 -O3 -fstrict-aliasing -std=c99 -Wall -fvisibility=hidden
-CFLAGS	+= -pipe -Wall -fPIC -g
-LDFLAGS	:= -m32 -shared -static-libgcc -Wl,-O1
+# common flags
+CFLAGS		:= -pipe -Wall -g -O3 -fPIC
+ifdef PLAT_DARWIN
+CFLAGS		+= -mmacosx-version-min=10.4
+CFLAGS		+= -isysroot /Developer/SDKs/MacOSX10.4u.sdk
 endif
+
+# optimization flags
 ifdef RELEASE
-CFLAGS	:= -m32 -O3 -fstrict-aliasing -std=c99 -Wall -fvisibility=hidden
-CFLAGS	+= -pipe -Wall -fPIC -fomit-frame-pointer
-LDFLAGS	:= -m32 -shared -static-libgcc -Wl,-O1,--strip-all
+CFLAGS		+= -fvisibility=hidden
+CFLAGS		+= -fomit-frame-pointer
+CFLAGS		+= -fstrict-aliasing
+ifdef PLAT_DARWIN
+ifdef DIST
+CFLAGS		+= -arch i386 -arch ppc
 endif
-ifdef RELEASE_STATIC
-CFLAGS	:= -m32 -O3 -fstrict-aliasing -std=c99 -Wall -fvisibility=hidden
-CFLAGS	+= -pipe -Wall -fPIC -fomit-frame-pointer
-LDFLAGS	:= -m32 -shared -static-libgcc -Wl,-Bstatic,-O1,--strip-all
+endif
+endif #RELEASE
+CXXFLAGS	:= $(CFLAGS)
+
+# language dependent flags
+CFLAGS		+= -std=c99
+ifdef RELEASE
+CXXFLAGS	+= -fvisibility-inlines-hidden
+endif
+
+LDFLAGS		:= $(CFLAGS) -static-libgcc
+ifdef PLAT_LINUX
+ifdef DIST
+LDFLAGS		+= -static
+endif
+endif
+
+ifdef PLAT_DARWIN
+LDFLAGS		+= -bundle -undefined dynamic_lookup
+ARFLAGS		:= -static -o
+else
+ARFLAGS		:= cru
 endif
 
 
-DEPS	:= $(patsubst %.c, $(BUILDDIR)/obj/%.cdep, $(SOURCES))
-OBJECTS	:= $(patsubst %.c, $(BUILDDIR)/obj/%.o, $(SOURCES))
+# determine intermediate object filenames
+C_SRC		:= $(filter %.c, $(SRC))
+CXX_SRC		:= $(filter %.cpp, $(SRC))
 
-print_cc	:= echo [ CC ]
-print_so	:= echo [ SO ]
-print_ld	:= echo [ LD ]
-print_memc	:= echo [ MEMCHECK ]
-print_prf	:= echo [ PROFILE  ]
-print_error	:= (echo [ FAILED ] && false)
+DEPS		:= $(patsubst %.c, $(BUILDDIR)/.obj/%_C.dep, $(C_SRC))
+DEPS		+= $(patsubst %.cpp, $(BUILDDIR)/.obj/%_CXX.dep, $(CXX_SRC))
 
-.PHONY: all clean debug release release-static x52control test
-.PHONY: memcheck profile
+OBJECTS		:= $(patsubst %.c, $(BUILDDIR)/.obj/%_C.o, $(C_SRC))
+OBJECTS		+= $(patsubst %.cpp, $(BUILDDIR)/.obj/%_CXX.o, $(CXX_SRC))
+BINOBJ		:= $(filter-out $(BUILDDIR)/.obj/./libx52/%.o, $(OBJECTS))
+LIBOBJ		:= $(filter $(BUILDDIR)/.obj/./libx52/%.o, $(OBJECTS))
 
-all: debug release release-static
+
+# tools
+ifdef PLAT_DARWIN
+gcc_prefix	:= -4.0
+endif
+CC		:= gcc$(gcc_prefix)
+CXX		:= g++$(gcc_prefix)
+ifeq ($(CXX_SRC),)
+LD		:= gcc$(gcc_prefix)
+else
+LD		:= g++$(gcc_prefix)
+endif
+ifdef PLAT_DARWIN
+AR		:= libtool
+else
+AR		:= ar
+endif
+
+print_ar	:= echo $(eflags) "AR "
+print_tar	:= echo $(eflags) "TAR"
+print_ld	:= echo $(eflags) "LD "
+print_cc	:= echo $(eflags) "CC "
+print_cxx	:= echo $(eflags) "CXX"
+
+
+# targets
+all: release
+
+help:
+	@echo "following make targets are available:"
+	@echo "  help        - print this"
+	@echo "  release     - build an optimized release version (*)"
+	@echo "  debug       - build a debug version"
+	@echo "  lib-release - build libx52.a only, optimized"
+	@echo "  lib-debug   - build libx52.a only"
+	@echo "  dist        - build a version suitable for distribution,"
+	@echo "                on macos x this will create an universal binary"
+	@echo "  clean       - recursively delete the output directory" \
+		"'$(OUTDIR)'"
+	@echo ""
+	@echo "(*) denotes the default target if none or 'all' is specified"
 
 debug:
-	@$(MAKE) CONF=debug -s -C . x52control test
+	@$(MAKE) CONF=debug -C . all-recursive
 release:
-	@$(MAKE) CONF=release -s -C . x52control test
-release-static:
-	@$(MAKE) CONF=release_s -s -C . x52control test
-
-memcheck: debug
-# valgrind >= 3.5 supports non-zero exit code on leak occurances
-	@$(print_memc)
-	@valgrind --leak-check=full --error-exitcode=1 --show-reachable=yes \
-	$(OUTDIR)/debug/test 2> $(OUTDIR)/debug/test.mem 1> /dev/null || \
-	$(print_error)
-
-profile: debug
-	@$(print_prf)
-	@valgrind --tool=callgrind --error-exitcode=1 \
-	--callgrind-out-file=$(OUTDIR)/debug/test.cgr $(OUTDIR)/debug/test \
-	2> $(OUTDIR)/debug/test.prf 1> /dev/null || $(print_error)
-
-x52control: $(BUILDDIR)/lin.xpl
-test:  $(BUILDDIR)/test
-
-$(BUILDDIR)/lin.xpl: $(OBJECTS)
-	@$(print_so) $(@)
-	@-mkdir -p $(dir $(@))
-	@$(LD) -Wl,-soname,$(notdir $(@)) $(LDFLAGS) -o $@ $(OBJECTS) || \
-	$(print_error)
-
-$(BUILDDIR)/test: $(BUILDDIR)/lin.xpl $(BUILDDIR)/obj/./test/main.o
-	@$(print_ld) $(@)
-	@-mkdir -p $(dir $(@))
-	@$(LD) -m32 -Wl,-rpath='$$ORIGIN',-z,origin -o $@ $(BUILDDIR)/lin.xpl \
-	$(BUILDDIR)/obj/./test/main.o || $(print_error)
-
-$(BUILDDIR)/obj/%.o: %.c
-	@$(print_cc) $(<)
-	@-mkdir -p $(dir $(@))
-	@$(CC) $(CFLAGS) $(INCLUDE) $(DEFINES) -c -o$(@) $(<) || $(print_error)
-	@$(CC) $(CFLAGS) $(INCLUDE) $(DEFINES) -MM -MT $(@) -MT $(@:.o=.cdep) \
-	-o $(@:.o=.cdep) $(<) || $(print_error)
+	@$(MAKE) CONF=release -C . all-recursive
+lib-release:
+	@$(MAKE) CONF=release -C . lib-recursive
+lib-debug:
+	@$(MAKE) CONF=debug -C . lib-recursive
+dist:
+	@$(MAKE) CONF=release_dist -C . dist-recursive
 
 clean:
-	@echo cleaning tree
+	@echo "deleting '$(OUTDIR)'"
 	@-rm -rf $(OUTDIR)
 
--include $(DEPS)
+dist-recursive: $(OUTDIR)/dist/x52control-$(VERSION)-$(PLATFORM).tar.bz2 \
+$(OUTDIR)/dist/x52control-$(VERSION).tar.bz2
 
+all-recursive: $(BUILDDIR)/x52control.xpl
+lib-recursive: $(BUILDDIR)/libx52.a
+
+$(OUTDIR)/dist/x52control-$(VERSION)-$(PLATFORM).tar.bz2: \
+$(BUILDDIR)/x52control.xpl
+	@-mkdir -p $(dir $(@))
+	@$(print_tar) $(subst $(PWD)/, ./, $(abspath $(@)))
+	@tar -C $(BUILDDIR) -cjf $(@) x52control.xpl
+
+$(OUTDIR)/dist/x52control-$(VERSION).tar.bz2:
+	@-mkdir -p $(dir $(@))
+	@$(print_tar) $(subst $(PWD)/, ./, $(abspath $(@)))
+	@git archive --format=tar --prefix=x52control-$(VERSION)/ \
+	HEAD^{tree} | \
+	bzip2 > $(@)
+
+$(BUILDDIR)/libx52.a: $(LIBOBJ)
+	@$(print_ar) $(subst $(PWD)/, ./, $(abspath $(@)))
+	@-mkdir -p $(dir $(@))
+	@$(AR) $(ARFLAGS) $(@) $(LIBOBJ)
+
+$(BUILDDIR)/x52control.xpl: $(BUILDDIR)/libx52.a $(BINOBJ)
+	@$(print_ld) $(subst $(PWD)/, ./, $(abspath $(@)))
+	@-mkdir -p $(dir $(@))
+	@$(LD) $(LDFLAGS) $(LPATH) $(FRAMEWORKS) \
+	-o $(@) $(BINOBJ) $(BUILDDIR)/libx52.a $(LIBRARIES)
+ifdef DIST
+#	strip $(@)
+endif
+
+
+$(BUILDDIR)/.obj/%_C.o: %.c
+	@$(print_cc) $(subst $(PWD)/, ./, $(abspath $(<)))
+	@-mkdir -p $(dir $(@))
+ifndef DIST
+	@$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -S -o $(@:.o=.s) $(<)
+	@$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -M -MT \
+		"$(@) $(@:.o=.dep)" -o $(@:.o=.dep) $(<)
+endif
+	@$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -c -o $(@) $(<)
+
+$(BUILDDIR)/.obj/%_CXX.o: %.cpp
+	@$(print_cxx) $(subst $(PWD)/, ./, $(abspath $(<)))
+	@-mkdir -p $(dir $(@))
+ifndef DIST
+	@$(CXX) $(CXXFLAGS) $(DEFINES) $(INCLUDES) -S -o $(@:.o=.s) $(<)
+	@$(CXX) $(CXXFLAGS) $(DEFINES) $(INCLUDES) -M -MT \
+		"$(@) $(@:.o=.dep)" -o $(@:.o=.dep) $(<)
+endif
+	@$(CXX) $(CXXFLAGS) $(DEFINES) $(INCLUDES) -c -o $(@) $(<)
+
+-include $(DEPS)

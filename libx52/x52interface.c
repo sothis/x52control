@@ -39,8 +39,7 @@ enum x52i_control
 ** holds the complete device state. is used by x52i_commit() and state
 ** modifier functions.
 **/
-static __thread
-struct x52i_state_t {
+static struct x52i_state_t {
 	uint32_t	dirty;
 	uint32_t	ledstates;
 	uint16_t	dat[29];
@@ -48,7 +47,7 @@ struct x52i_state_t {
 } x52i_state = {0};
 
 
-static __thread struct x52d_t*		x52d = 0;
+static struct x52d_t*		x52d = 0;
 
 
 /* shift indicator modifier/committer */

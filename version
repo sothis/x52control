@@ -1,0 +1,15 @@
+#!/bin/sh
+
+_VER=v0.4.0
+
+if test -d .git -o -f .git &&
+	VN=$(git describe --tags --abbrev=4 --match 'v*' --dirty 2>/dev/null)
+then
+	VN=$(echo "$VN" | sed 's/-/+/;s/\(.*\)-g/\1-/');
+	VN=$(echo "$VN" | sed 's/-/./g');
+else
+	VN="$_VER"
+fi
+
+VN=$(expr "$VN" : v*'\(.*\)')
+echo $VN
