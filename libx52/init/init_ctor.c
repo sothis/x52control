@@ -59,7 +59,7 @@ static void _cleanup(void)
 }
 
 void
-init_ctor(void)
+init_ctor(void(*fn)(void))
 {
 	if (_init_called) {
 		abort();
@@ -69,4 +69,5 @@ init_ctor(void)
 	if (!_libx52_inited) {
 		abort();
 	}
+	if (fn) atexit(fn);
 }

@@ -20,6 +20,7 @@ SRC		+= ./libx52/x52session.c
 
 ### x52control
 SRC		+= ./src/entry.c
+SRC		+= ./src/control.c
 
 
 

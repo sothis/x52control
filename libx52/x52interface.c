@@ -166,6 +166,7 @@ x52i_set_text(enum x52i_device line, const char* txt)
 	uint8_t idx = line - x52i_text_base;
 	if (!txt) txt = "";
 
+	/* TOFIX: on ppc this test will always fail */
 	if (!strncmp((char*)x52i_state.lines[idx], txt, sizeof(uint16_t)*8))
 		return;
 
