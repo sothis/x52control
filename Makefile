@@ -59,6 +59,9 @@ BUILDDIR	:= $(OUTDIR)/$(CONF)
 
 # common flags
 CFLAGS		:= -pipe -Wall -g -O3 -fPIC
+ifdef PLAT_LINUX
+CFLAGS		+= -m32
+endif
 ifdef PLAT_DARWIN
 CFLAGS		+= -mmacosx-version-min=10.4
 CFLAGS		+= -isysroot /Developer/SDKs/MacOSX10.4u.sdk
@@ -85,16 +88,13 @@ endif
 
 LDFLAGS		:= $(CFLAGS) -static-libgcc
 ifdef PLAT_LINUX
-ifdef DIST
-LDFLAGS		+= -static
-endif
+LDFLAGS		+= -shared
+ARFLAGS		:= cru
 endif
 
 ifdef PLAT_DARWIN
 LDFLAGS		+= -bundle -undefined dynamic_lookup
 ARFLAGS		:= -static -o
-else
-ARFLAGS		:= cru
 endif
 
 
@@ -197,7 +197,9 @@ $(BUILDDIR)/x52control.xpl: $(BUILDDIR)/libx52.a $(BINOBJ)
 	@$(LD) $(LDFLAGS) $(LPATH) $(FRAMEWORKS) \
 	-o $(@) $(BINOBJ) $(BUILDDIR)/libx52.a $(LIBRARIES)
 ifdef DIST
-#	strip $(@)
+ifdef PLAT_LINUX
+	@strip $(@)
+endif
 endif
 
 
