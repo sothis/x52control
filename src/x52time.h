@@ -22,8 +22,13 @@ public:
     bool has_object(x52object_t* source);
     bool refresh(x52object_t* source);
     void final_refresh(void);
+    int x52led_debug;
+
 private:
     bool a_visible;
+    int a_gear;
+    int a_autopilot_engaged;
+    int a_weapons_armed;
     char a_hours;
     char a_mins;
     char a_lastmin;

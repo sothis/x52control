@@ -4,6 +4,12 @@
 #include "x52mfdpage.h"
 #include "x52time.h"
 #include "x52session.h"
+#include <iostream>
+#include <fstream>
+
+using namespace std;
+using std::map;
+using std::string;
 
 x52session_t::x52session_t(void) : a_joystickout(0), a_joystickin(0), a_dataconnection(0)
 {
@@ -39,6 +45,7 @@ void x52session_t::create_defaultpages(void)
     a_joystickin->add_page(new x52mfdpage_t("std.radio.com", a_joystickout, a_dataconnection));
     a_joystickin->add_page(new x52mfdpage_t("std.radio.adf", a_joystickout, a_dataconnection));
     a_joystickin->add_page(new x52mfdpage_t("std.radio.nav", a_joystickout, a_dataconnection));
+    a_joystickin->add_page(new x52mfdpage_t("navigation_1", a_joystickout, a_dataconnection));
     a_x52time = new x52time_t("std.time.x-plane", a_joystickout, a_dataconnection);
     a_x52time->set_active(true);
 }

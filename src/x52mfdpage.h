@@ -1,6 +1,7 @@
 #ifndef X52MFDPAGE_H
 #define X52MFDPAGE_H
 
+#include <time.h>
 #include <map>
 #include <string>
 #include "x52tools.h"
@@ -21,6 +22,7 @@ public:
     bool has_object(x52object_t* source);
     bool refresh(x52object_t* source);
     void final_refresh(void);
+    time_t last_page_update;
 private:
     bool a_visible;
     x52out_t* a_outdevice;

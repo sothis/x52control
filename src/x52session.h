@@ -3,6 +3,7 @@
 
 #include "x52tools.h"
 
+
 class x52out_t;
 class x52in_t;
 class x52data_t;

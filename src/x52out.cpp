@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <cctype>
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -8,7 +10,7 @@ extern const char* version;
 
 #define STANDARD_MSG  "   Saitek X52\n     Flight\n Control System"
 #define STANDARD_MSG_PRO " Saitek X52 Pro\n     Flight\n Control System"
-#define WELCOME_MSG   "   x52control\n \n      ver %s", version
+#define WELCOME_MSG   "   x52control\n \n ver %s", version
 
 #if defined (__ppc__)
 #define __bswap_constant_16(x)                   \
@@ -110,6 +112,8 @@ x52out_t::~x52out_t(void)
     }
     time(true, 0, 0);
     date(0, 0, 0);
+    display_brightness(0x00);
+    led_brightness(0x00);
     usb_close(a_usbhdl);
     debug_out(info, "joystick disconnected");
 }
@@ -135,6 +139,87 @@ void x52out_t::led_brightness(char brightness)
     catch (const char* reason)
     {
         debug_out(err, "%s of LED's", reason);
+    }
+}
+
+void x52out_t::set_led_by_name(int x52led_debug, const char* dataref, int data, const char* action, ...) {
+    string str=action;
+    std::transform(str.begin(),str.end(),str.begin(),tolower);
+    int pos=str.find(",",0);
+    if ( pos <= 0) {
+        debug_out(err,"unknown or empty action: %s = %d -> %s",dataref,data,action);
+        return;
+    }
+    string led = str.substr(0,pos);
+    string colors = str.substr(pos+1);
+
+    if (x52led_debug)
+        debug_out(warn,"%s: turn led %s with colors: %s and value %d",dataref,led.c_str(),colors.c_str(),data);
+
+    map<int, string> ord_colors;
+    int c=0;
+    pos=colors.find(",",0);
+    while ( pos > 0 ) {
+        ord_colors[c++]=colors.substr(0,pos);
+        colors=colors.substr(pos+1);
+        pos=colors.find(",",0);
+    }
+
+    string color;
+    ord_colors[c++]=colors.substr(0,pos);
+    if ( data > (int) ord_colors.size()-1 ){
+	 debug_out(warn,"no color defined for %s = %d, using last defined color: %s",dataref,data,action);
+        color=ord_colors[ord_colors.size()-1 ];
+    } else {
+        try {
+            color=ord_colors[data];
+        } catch (const char* reason) {
+            debug_out(err,"no color defined for value %d",led.c_str(),colors.c_str(),data);
+            return;
+        }
+    }
+
+    int led_base_number=0;
+    if (led=="a") led_base_number=2;
+    else if (led=="b") led_base_number=4;
+    else if (led=="d") led_base_number=6;
+    else if (led=="e") led_base_number=8;
+    else if (led=="t1" || led == "t2") led_base_number=10;
+    else if (led=="t3" || led == "t4") led_base_number=12;
+    else if (led=="t5" || led == "t6") led_base_number=14;
+    else if (led=="i") led_base_number=18;
+    else if (led=="1") led_base_number=0;
+    else if (led=="hl") led_base_number=16;
+    else if (led=="th") led_base_number=20;
+    else {
+        debug_out(err,"unknown led: %s",led.c_str());
+        return;
+    }
+    if (color=="red") {
+        setled(led_base_number,1);
+        setled(led_base_number+1,0);
+    } else if (color=="green") {
+        setled(led_base_number,0);
+        setled(led_base_number+1,1);
+    } else if (color=="orange" || color=="on") {
+        setled(led_base_number,1);
+        setled(led_base_number+1,1);
+    } else if (color=="off") {
+        setled(led_base_number,0);
+        setled(led_base_number+1,0);
+    } else {
+        debug_out(err,"no such color: %s",color.c_str());
+    }
+}
+void x52out_t::set_led(int led, int on)
+{
+    try
+    {
+        setled(led,on);
+    }
+    catch (const char* reason)
+    {
+        debug_out(err, "%s", reason);
     }
 }
 
@@ -233,6 +318,14 @@ void x52out_t::setbrightness(bool mfd, char brightness)
                           brightness, mfd?0xB1:0xB2, 0, 0, 100);
     if (res < 0)
         throw "could not set brightness";
+}
+
+void x52out_t::setled(int led, int on) {
+    int res = 0;
+    res = usb_control_msg(a_usbhdl, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, 0x91,
+                          on | (led<<8), 0xb8, 0, 0, 100);
+    if (res > 0)
+        throw "could not set led";
 }
 
 void x52out_t::settext(int line, const char *text, int length)

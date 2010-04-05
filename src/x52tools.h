@@ -2,6 +2,9 @@
 #define X52TOOLS_H
 
 #include <string>
+#include <map>
+
+using namespace std;
 
 class x52tools_t
 {
@@ -9,6 +12,7 @@ public:
     x52tools_t(void);
     void debug_out(int type, const char* msg, ...);
     static void debug_out(const char* msg, ...);
+    void read_config();
     bool verbose;
     enum dbgtype_e
     {
@@ -16,6 +20,7 @@ public:
         warn,
         err
     };
+    std::map<std::string, std::string> x52control_config;
 private:
 };
 
