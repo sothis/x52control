@@ -1,5 +1,6 @@
 #include <string.h>
 #include <time.h>
+#include <stdio.h>
 #include "x52out.h"
 #include "x52data.h"
 #include "x52mfdpage.h"

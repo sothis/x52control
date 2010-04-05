@@ -1,5 +1,6 @@
 #include <string.h>
 #include <fstream>
+#include <stdlib.h>
 #include "x52out.h"
 #include "x52data.h"
 #include "x52time.h"

@@ -28,6 +28,9 @@ extern const char* version;
                 : "cc");                            \
                 __v; }))
 #elif defined (__i386__)
+#ifdef __bswap_constant_16
+#undef __bswap_constant_16
+#endif
 #define __bswap_constant_16(x) x
 #define _SWAB16(x) x
 #endif /* __ppc__ */
@@ -144,7 +147,7 @@ void x52out_t::led_brightness(char brightness)
 
 void x52out_t::set_led_by_name(int x52led_debug, const char* dataref, int data, const char* action, ...) {
     string str=action;
-    std::transform(str.begin(),str.end(),str.begin(),tolower);
+    std::transform(str.begin(),str.end(),str.begin(), ::tolower);
     int pos=str.find(",",0);
     if ( pos <= 0) {
         debug_out(err,"unknown or empty action: %s = %d -> %s",dataref,data,action);
